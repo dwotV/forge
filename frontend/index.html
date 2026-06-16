@@ -312,8 +312,8 @@
       <span id="kali-status">conectando...</span>
     </div>
     <div class="spacer"></div>
-    <button id="btn-gui" onclick="toggleGUI()" title="Mostrar/ocultar visor de apps GUI">
-      [ visor GUI ]
+    <button id="btn-gui" onclick="toggleGUI()" title="Show/hide GUI app viewer">
+      [ DESKTOP VIEWER ]
     </button>
   </header>
 
@@ -350,10 +350,10 @@
 
     <!-- Cabecera terminal -->
     <div id="term-header">
-      <span class="tab">bash — kali@docker</span>
+      <span class="tab">shell — hacker@kali</span>
       <div class="spacer"></div>
       <span class="ws-status" id="ws-label">desconectado</span>
-      <button id="btn-reconnect" onclick="connectTerminal()">reconectar</button>
+      <button id="btn-reconnect" onclick="connectTerminal()">reconnect</button>
     </div>
 
     <!-- Terminal xterm.js -->
@@ -428,6 +428,14 @@ function initTerminal() {
   });
   ro.observe(document.getElementById('terminal'));
 
+  // Registrar onData UNA SOLA VEZ aquí.
+  // connectTerminal() puede llamarse múltiples veces (reconexión), por eso
+  // NO debe registrar onData — de lo contrario los listeners se acumulan
+  // y cada tecla se envía N veces al backend (bug de caracteres duplicados).
+  term.onData(data => {
+    if (ws && ws.readyState === WebSocket.OPEN) ws.send(data);
+  });
+
   connectTerminal();
 }
 
@@ -436,13 +444,13 @@ function initTerminal() {
 // ─────────────────────────────────────────────────────
 function connectTerminal() {
   if (ws) { ws.onclose = null; ws.close(); }
-  setWsStatus('conectando...', false);
+  setWsStatus('connecting...', false);
 
   ws = new WebSocket(WS_URL);
   ws.binaryType = 'arraybuffer';
 
   ws.onopen = () => {
-    setWsStatus('conectado', true);
+    setWsStatus('connected', true);
     term.clear();
     // Mandar tamaño inicial
     ws.send(JSON.stringify({ type: 'resize', cols: term.cols, rows: term.rows }));
@@ -456,18 +464,13 @@ function connectTerminal() {
   };
 
   ws.onclose = () => {
-    setWsStatus('desconectado', false);
-    term.write('\r\n\x1b[31m[conexión cerrada — pulsa "reconectar"]\x1b[0m\r\n');
+    setWsStatus('offline', false);
+    term.write('\r\n\x1b[31m[connection closed — press "reconnect"]\x1b[0m\r\n');
   };
 
   ws.onerror = () => {
     setWsStatus('error', false);
   };
-
-  // Entrada del usuario → backend → Kali
-  term.onData(data => {
-    if (ws && ws.readyState === WebSocket.OPEN) ws.send(data);
-  });
 }
 
 function setWsStatus(text, connected) {
@@ -499,16 +502,16 @@ async function launchApp(appId) {
     });
     const data = await r.json();
     if (data.ok) {
-      showToast(`Lanzando ${data.label}...`);
+      showToast(`Launching ${data.label}...`);
       // Abrir el visor GUI automáticamente si estaba cerrado
       if (!guiOpen) toggleGUI();
       // Forzar refresh de estado tras 1.5s para que el pulso aparezca
       setTimeout(refreshStatus, 1500);
     } else {
-      showToast(data.error || 'Error desconocido', true);
+      showToast(data.error || 'Unknown error', true);
     }
   } catch {
-    showToast('No se puede contactar el backend', true);
+    showToast('The backend cannot be contacted', true);
   }
 }
 
@@ -520,10 +523,10 @@ async function killApp(appId, e) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ app: appId }),
     });
-    showToast('App detenida');
+    showToast('App stopped');
     setTimeout(refreshStatus, 800);
   } catch {
-    showToast('Error al detener la app', true);
+    showToast('Error stopping the app', true);
   }
 }
 
@@ -556,10 +559,10 @@ async function healthCheck() {
     const data = await r.json();
     const alive = data.kali === 'running';
     dot.className  = 'dot ' + (alive ? 'alive' : 'dead');
-    label.textContent = alive ? `${data.name} — corriendo` : 'kali — detenido';
+    label.textContent = alive ? `${data.name} — running` : 'forge-kali — stopped';
   } catch {
     dot.className = 'dot dead';
-    label.textContent = 'backend — sin respuesta';
+    label.textContent = 'backend — unresponsive';
   }
 }
 
@@ -602,7 +605,7 @@ async function renderAppButtons() {
           <span class="app-icon">${app.icon}</span>
           <span class="app-name">${app.label}</span>
           <span class="pulse"></span>
-          <button class="kill-btn" title="Detener" onclick="killApp('${id}', event)">×</button>
+          <button class="kill-btn" title="Kill" onclick="killApp('${id}', event)">×</button>
         `;
         container.appendChild(btn);
       });
