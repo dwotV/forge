@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Forge</title>
+
+  <link rel="icon" type="image/x-icon" href="forge-icon.png">
+
+  <!-- JetBrains Mono — toda la UI usa mono, es parte de la identidad -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
+
+  <!-- xterm.js -->
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.css">
+  <script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xterm-addon-web-links@0.9.0/lib/xterm-addon-web-links.js"></script>
+
+  <style>
+    /* ── Variables ─────────────────────────────── */
+    :root {
+      --bg:        #0d0f14;
+      --bg2:       #1a1d24;
+      --bg3:       #21242e;
+      --border:    #2a2e3a;
+      --green:     #00ff88;
+      --green-dim: #00cc6a;
+      --green-bg:  rgba(0, 255, 136, 0.07);
+      --red:       #ff4757;
+      --amber:     #ffa502;
+      --text:      #c8cdd8;
+      --text-dim:  #555c6e;
+      --text-hi:   #e8ecf4;
+      --mono:      'JetBrains Mono', monospace;
+    }
+
+    /* ── Reset ─────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(--text); font-family: var(--mono); font-size: 13px; }
+
+    /* ── Scanlines CRT — la firma visual ──────── */
+    body::after {
+      content: '';
+      position: fixed; inset: 0;
+      background: repeating-linear-gradient(
+        to bottom,
+        transparent,
+        transparent 2px,
+        rgba(0,0,0,0.08) 2px,
+        rgba(0,0,0,0.08) 4px
+      );
+      pointer-events: none;
+      z-index: 9999;
+    }
+
+    /* ── Layout principal ──────────────────────── */
+    #root {
+      display: grid;
+      grid-template-rows: 42px 1fr;
+      grid-template-columns: 220px 1fr;
+      grid-template-areas:
+        "topbar topbar"
+        "sidebar main";
+      height: 100vh;
+    }
+
+    /* ── Topbar ────────────────────────────────── */
+    #topbar {
+      grid-area: topbar;
+      background: var(--bg2);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
+      gap: 12px;
+    }
+    #topbar .logo {
+      color: var(--green);
+      font-weight: 700;
+      font-size: 14px;
+      letter-spacing: 0.08em;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    #topbar .logo .bracket { color: var(--text-dim); font-weight: 300; }
+    #topbar .sep { color: var(--border); }
+    #topbar .status-pill {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      color: var(--text-dim);
+    }
+    #topbar .dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--text-dim);
+      transition: background .3s;
+    }
+    #topbar .dot.alive { background: var(--green); box-shadow: 0 0 6px var(--green); }
+    #topbar .dot.dead  { background: var(--red);   box-shadow: 0 0 6px var(--red); }
+    .spacer { flex: 1; }
+    #btn-gui {
+      background: var(--green-bg);
+      border: 1px solid var(--green-dim);
+      color: var(--green);
+      font-family: var(--mono);
+      font-size: 11px;
+      padding: 5px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background .2s;
+      letter-spacing: 0.04em;
+    }
+    #btn-gui:hover { background: rgba(0,255,136,0.14); }
+    #btn-gui.active { background: rgba(0,255,136,0.18); }
+
+    /* ── Sidebar ────────────────────────────────── */
+    #sidebar {
+      grid-area: sidebar;
+      background: var(--bg2);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: var(--border) transparent;
+    }
+    .sidebar-section {
+      padding: 14px 12px 6px;
+    }
+    .sidebar-label {
+      font-size: 10px;
+      font-weight: 500;
+      letter-spacing: 0.12em;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      padding: 0 4px 8px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 8px;
+    }
+
+    /* ── Botones de apps ───────────────────────── */
+    .app-btn {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      width: 100%;
+      background: none;
+      border: 1px solid transparent;
+      border-radius: 6px;
+      padding: 7px 10px;
+      cursor: pointer;
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--text);
+      text-align: left;
+      transition: background .15s, border-color .15s, color .15s;
+      margin-bottom: 3px;
+      position: relative;
+    }
+    .app-btn:hover {
+      background: var(--bg3);
+      border-color: var(--border);
+      color: var(--text-hi);
+    }
+    .app-btn.running {
+      border-color: var(--green-dim);
+      background: var(--green-bg);
+      color: var(--green);
+    }
+    .app-btn .app-icon { font-size: 14px; flex-shrink: 0; }
+    .app-btn .app-name { flex: 1; }
+    /* Pulso cuando la app está corriendo */
+    .app-btn .pulse {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--green);
+      opacity: 0;
+      transition: opacity .3s;
+    }
+    .app-btn.running .pulse {
+      opacity: 1;
+      animation: pulse 1.4s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(0,255,136,.6); }
+      50%       { box-shadow: 0 0 0 4px rgba(0,255,136,0); }
+    }
+    /* Botón kill (×) visible en hover cuando está running */
+    .app-btn .kill-btn {
+      display: none;
+      background: none;
+      border: none;
+      color: var(--red);
+      font-size: 14px;
+      cursor: pointer;
+      padding: 0 2px;
+      font-family: var(--mono);
+      line-height: 1;
+    }
+    .app-btn.running:hover .pulse { display: none; }
+    .app-btn.running:hover .kill-btn { display: block; }
+
+    /* ── Main — terminal + visor GUI ──────────── */
+    #main {
+      grid-area: main;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* Panel noVNC (oculto por defecto, desliza desde arriba) */
+    #gui-panel {
+      background: #000;
+      border-bottom: 1px solid var(--border);
+      overflow: hidden;
+      height: 0;
+      transition: height .35s cubic-bezier(.4,0,.2,1);
+      flex-shrink: 0;
+    }
+    #gui-panel.open { height: 55vh; }
+    #gui-panel iframe {
+      width: 100%; height: 100%;
+      border: none;
+      display: block;
+    }
+
+    /* Cabecera de la terminal */
+    #term-header {
+      background: var(--bg2);
+      border-bottom: 1px solid var(--border);
+      padding: 0 14px;
+      height: 34px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+    #term-header .tab {
+      font-size: 11px;
+      color: var(--green);
+      border-bottom: 2px solid var(--green);
+      padding: 0 2px 4px;
+      letter-spacing: 0.04em;
+    }
+    #term-header .ws-status {
+      font-size: 10px;
+      color: var(--text-dim);
+      margin-left: auto;
+    }
+    #term-header .ws-status.conn { color: var(--green-dim); }
+    #btn-reconnect {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      font-family: var(--mono);
+      font-size: 10px;
+      padding: 3px 8px;
+      border-radius: 3px;
+      cursor: pointer;
+      transition: color .15s, border-color .15s;
+    }
+    #btn-reconnect:hover { color: var(--text-hi); border-color: var(--text-dim); }
+
+    /* Contenedor xterm */
+    #terminal {
+      flex: 1;
+      overflow: hidden;
+      padding: 8px;
+      background: var(--bg);
+    }
+    #terminal .xterm { height: 100%; }
+    #terminal .xterm-viewport { background: var(--bg) !important; }
+
+    /* ── Notificación toast ────────────────────── */
+    #toast {
+      position: fixed;
+      bottom: 20px; right: 20px;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--green);
+      color: var(--text-hi);
+      font-size: 12px;
+      padding: 10px 16px;
+      border-radius: 4px;
+      opacity: 0;
+      transform: translateY(8px);
+      transition: opacity .2s, transform .2s;
+      pointer-events: none;
+      z-index: 1000;
+      max-width: 280px;
+    }
+    #toast.show { opacity: 1; transform: translateY(0); }
+    #toast.error { border-left-color: var(--red); }
+  </style>
+</head>
+
+<body>
+<div id="root">
+
+  <!-- ── Topbar ─────────────────────────────────── -->
+  <header id="topbar">
+    <div class="logo" style="font-family: var(--mono); font-size: 10px; line-height: 1.15; white-space: pre; font-weight: normal; letter-spacing: 0; display: block; padding-top: 2px;">█▀▀ █▀█ █▀█ █▀▀ █▀▀
+█▀░ █▄█ █▀▄ █▄█ ██▄</div>
+    <span class="sep">|</span>
+    <div class="status-pill">
+      <div class="dot" id="kali-dot"></div>
+      <span id="kali-status">conectando...</span>
+    </div>
+    <div class="spacer"></div>
+    <button id="btn-gui" onclick="toggleGUI()" title="Mostrar/ocultar visor de apps GUI">
+      [ visor GUI ]
+    </button>
+  </header>
+
+  <!-- ── Sidebar: lanzador de apps ──────────────── -->
+  <aside id="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-label">web &amp; proxy</div>
+      <div id="apps-web"></div>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">redes</div>
+      <div id="apps-net"></div>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">passwords</div>
+      <div id="apps-pass"></div>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">forense &amp; extra</div>
+      <div id="apps-other"></div>
+    </div>
+  </aside>
+
+  <!-- ── Main ───────────────────────────────────── -->
+  <main id="main">
+
+    <!-- Panel noVNC (apps GUI) -->
+    <div id="gui-panel">
+      <iframe id="novnc-frame"
+        src="/novnc/vnc.html?autoconnect=1&resize=scale&show_dot=true&password=kalipass"
+        allow="fullscreen">
+      </iframe>
+    </div>
+
+    <!-- Cabecera terminal -->
+    <div id="term-header">
+      <span class="tab">bash — kali@docker</span>
+      <div class="spacer"></div>
+      <span class="ws-status" id="ws-label">desconectado</span>
+      <button id="btn-reconnect" onclick="connectTerminal()">reconectar</button>
+    </div>
+
+    <!-- Terminal xterm.js -->
+    <div id="terminal"></div>
+
+  </main>
+</div>
+
+<!-- Toast de notificaciones -->
+<div id="toast"></div>
+
+<script>
+// ── Configuración ──────────────────────────────────────
+const BACKEND = window.location.hostname === 'localhost'
+  ? 'http://localhost:3000'
+  : `http://${window.location.hostname}:3000`;
+const WS_URL  = BACKEND.replace('http', 'ws') + '/terminal';
+
+// ── Catálogo: qué apps van en qué sección ─────────────
+const APP_SECTIONS = {
+  'apps-web':  ['firefox', 'burpsuite', 'zaproxy'],
+  'apps-net':  ['wireshark', 'zenmap', 'ettercap'],
+  'apps-pass': ['hydra', 'johnny'],
+  'apps-other':['autopsy', 'fern', 'terminal', 'files'],
+};
+
+// ── Estado ─────────────────────────────────────────────
+let term, fitAddon, ws, statusInterval, guiOpen = false;
+let appStatus = {};  // { wireshark: true, burpsuite: false, ... }
+
+// ─────────────────────────────────────────────────────
+//  xterm.js — iniciar terminal
+// ─────────────────────────────────────────────────────
+function initTerminal() {
+  term = new Terminal({
+    theme: {
+      background:  '#0d0f14',
+      foreground:  '#c8cdd8',
+      cursor:      '#00ff88',
+      cursorAccent:'#0d0f14',
+      selectionBackground: 'rgba(0,255,136,0.2)',
+      black:   '#1a1d24', brightBlack:   '#555c6e',
+      red:     '#ff4757', brightRed:     '#ff6b81',
+      green:   '#00ff88', brightGreen:   '#2ed573',
+      yellow:  '#ffa502', brightYellow:  '#eccc68',
+      blue:    '#378ADD', brightBlue:    '#70a1ff',
+      magenta: '#D4537E', brightMagenta: '#ff6b9d',
+      cyan:    '#1D9E75', brightCyan:    '#5DCAA5',
+      white:   '#c8cdd8', brightWhite:   '#e8ecf4',
+    },
+    fontFamily: "'JetBrains Mono', monospace",
+    fontSize:   14,
+    lineHeight: 1.4,
+    cursorBlink: true,
+    cursorStyle: 'block',
+    scrollback:  5000,
+    allowProposedApi: true,
+  });
+
+  fitAddon = new FitAddon.FitAddon();
+  term.loadAddon(fitAddon);
+  term.loadAddon(new WebLinksAddon.WebLinksAddon());
+  term.open(document.getElementById('terminal'));
+  fitAddon.fit();
+
+  // Reajustar cuando cambie el tamaño de ventana
+  const ro = new ResizeObserver(() => {
+    fitAddon.fit();
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({ type: 'resize', cols: term.cols, rows: term.rows }));
+    }
+  });
+  ro.observe(document.getElementById('terminal'));
+
+  connectTerminal();
+}
+
+// ─────────────────────────────────────────────────────
+//  WebSocket — conectar con bash en Kali
+// ─────────────────────────────────────────────────────
+function connectTerminal() {
+  if (ws) { ws.onclose = null; ws.close(); }
+  setWsStatus('conectando...', false);
+
+  ws = new WebSocket(WS_URL);
+  ws.binaryType = 'arraybuffer';
+
+  ws.onopen = () => {
+    setWsStatus('conectado', true);
+    term.clear();
+    // Mandar tamaño inicial
+    ws.send(JSON.stringify({ type: 'resize', cols: term.cols, rows: term.rows }));
+  };
+
+  ws.onmessage = e => {
+    const data = e.data instanceof ArrayBuffer
+      ? new Uint8Array(e.data)
+      : e.data;
+    term.write(data);
+  };
+
+  ws.onclose = () => {
+    setWsStatus('desconectado', false);
+    term.write('\r\n\x1b[31m[conexión cerrada — pulsa "reconectar"]\x1b[0m\r\n');
+  };
+
+  ws.onerror = () => {
+    setWsStatus('error', false);
+  };
+
+  // Entrada del usuario → backend → Kali
+  term.onData(data => {
+    if (ws && ws.readyState === WebSocket.OPEN) ws.send(data);
+  });
+}
+
+function setWsStatus(text, connected) {
+  const el = document.getElementById('ws-label');
+  el.textContent = text;
+  el.className = 'ws-status' + (connected ? ' conn' : '');
+}
+
+// ─────────────────────────────────────────────────────
+//  Panel noVNC (visor de apps GUI)
+// ─────────────────────────────────────────────────────
+function toggleGUI() {
+  guiOpen = !guiOpen;
+  document.getElementById('gui-panel').classList.toggle('open', guiOpen);
+  document.getElementById('btn-gui').classList.toggle('active', guiOpen);
+  // Reajustar terminal tras la animación
+  setTimeout(() => fitAddon && fitAddon.fit(), 380);
+}
+
+// ─────────────────────────────────────────────────────
+//  Lanzador de apps
+// ─────────────────────────────────────────────────────
+async function launchApp(appId) {
+  try {
+    const r = await fetch(`${BACKEND}/api/launch`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ app: appId }),
+    });
+    const data = await r.json();
+    if (data.ok) {
+      showToast(`Lanzando ${data.label}...`);
+      // Abrir el visor GUI automáticamente si estaba cerrado
+      if (!guiOpen) toggleGUI();
+      // Forzar refresh de estado tras 1.5s para que el pulso aparezca
+      setTimeout(refreshStatus, 1500);
+    } else {
+      showToast(data.error || 'Error desconocido', true);
+    }
+  } catch {
+    showToast('No se puede contactar el backend', true);
+  }
+}
+
+async function killApp(appId, e) {
+  e.stopPropagation();
+  try {
+    await fetch(`${BACKEND}/api/kill`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ app: appId }),
+    });
+    showToast('App detenida');
+    setTimeout(refreshStatus, 800);
+  } catch {
+    showToast('Error al detener la app', true);
+  }
+}
+
+// ─────────────────────────────────────────────────────
+//  Estado de apps (polling cada 5s)
+// ─────────────────────────────────────────────────────
+async function refreshStatus() {
+  try {
+    const r = await fetch(`${BACKEND}/api/status`);
+    appStatus = await r.json();
+    updateAppButtons();
+  } catch { /* backend no responde aún */ }
+}
+
+function updateAppButtons() {
+  document.querySelectorAll('.app-btn').forEach(btn => {
+    const id = btn.dataset.app;
+    btn.classList.toggle('running', !!appStatus[id]);
+  });
+}
+
+// ─────────────────────────────────────────────────────
+//  Health check — indicador Kali vivo/muerto
+// ─────────────────────────────────────────────────────
+async function healthCheck() {
+  const dot  = document.getElementById('kali-dot');
+  const label= document.getElementById('kali-status');
+  try {
+    const r    = await fetch(`${BACKEND}/api/health`);
+    const data = await r.json();
+    const alive = data.kali === 'running';
+    dot.className  = 'dot ' + (alive ? 'alive' : 'dead');
+    label.textContent = alive ? `${data.name} — corriendo` : 'kali — detenido';
+  } catch {
+    dot.className = 'dot dead';
+    label.textContent = 'backend — sin respuesta';
+  }
+}
+
+// ─────────────────────────────────────────────────────
+//  Toast
+// ─────────────────────────────────────────────────────
+let toastTimeout;
+function showToast(msg, isError = false) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'show' + (isError ? ' error' : '');
+  clearTimeout(toastTimeout);
+  toastTimeout = setTimeout(() => { el.className = ''; }, 3000);
+}
+
+// ─────────────────────────────────────────────────────
+//  Renderizar botones de apps desde la API
+// ─────────────────────────────────────────────────────
+async function renderAppButtons() {
+  try {
+    const r    = await fetch(`${BACKEND}/api/apps`);
+    const apps = await r.json();
+
+    // Índice id → definición
+    const byId = {};
+    apps.forEach(a => { byId[a.id] = a; });
+
+    // Rellenar cada sección
+    for (const [containerId, ids] of Object.entries(APP_SECTIONS)) {
+      const container = document.getElementById(containerId);
+      if (!container) continue;
+      ids.forEach(id => {
+        const app = byId[id];
+        if (!app) return;
+        const btn = document.createElement('button');
+        btn.className   = 'app-btn';
+        btn.dataset.app = id;
+        btn.onclick     = () => launchApp(id);
+        btn.innerHTML   = `
+          <span class="app-icon">${app.icon}</span>
+          <span class="app-name">${app.label}</span>
+          <span class="pulse"></span>
+          <button class="kill-btn" title="Detener" onclick="killApp('${id}', event)">×</button>
+        `;
+        container.appendChild(btn);
+      });
+    }
+  } catch {
+    // Backend aún no disponible, reintentar en 2s
+    setTimeout(renderAppButtons, 2000);
+  }
+}
+
+// ─────────────────────────────────────────────────────
+//  Arranque
+// ─────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  initTerminal();
+  renderAppButtons();
+  healthCheck();
+  refreshStatus();
+  // Polling
+  setInterval(healthCheck,   10_000);
+  setInterval(refreshStatus,  5_000);
+});
+</script>
+</body>
+</html>

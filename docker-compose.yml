@@ -1,0 +1,81 @@
+# ─────────────────────────────────────────────
+#  Panel de Hacking — docker-compose.yml
+#
+#  Servicios:
+#    kali     → contenedor Kali Linux con GUI
+#    backend  → Node.js: terminal WS + API REST
+#    frontend → nginx sirviendo index.html
+# ─────────────────────────────────────────────
+
+services:
+
+  kali:
+    build:
+      context: ./kali
+    container_name: forge-kali
+    hostname: kali
+    environment:
+      - VNC_PASSWORD=${VNC_PASSWORD:-kalipass}
+      - VNC_RESOLUTION=${VNC_RESOLUTION:-1280x800}
+      - TZ=America/Mexico_City
+    volumes:
+      - kali-home:/home/hacker       # persistencia del home del usuario
+      - kali-tools:/opt/tools        # herramientas personalizadas
+    ports:
+      - "5901:5901"   # VNC directo (opcional, cliente VNC externo)
+      - "6080:6080"   # noVNC — acceso web al escritorio Kali
+    cap_add:
+      - NET_ADMIN     # necesario para Wireshark, tcpdump, etc.
+      - NET_RAW
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    networks:
+      - panel-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "bash", "-c", "pgrep Xtigervnc > /dev/null"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  backend:
+    build:
+      context: ./backend
+    container_name: forge-backend
+    environment:
+      - KALI_CONTAINER=forge-kali
+      - PORT=3000
+    volumes:
+      # Montar el socket de Docker para poder hacer docker exec en Kali
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - "3000:3000"
+    networks:
+      - panel-net
+    depends_on:
+      kali:
+        condition: service_healthy
+    restart: unless-stopped
+
+  frontend:
+    image: nginx:alpine
+    container_name: forge-frontend
+    volumes:
+      - ./frontend:/usr/share/nginx/html:ro
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    ports:
+      - "8080:80"
+    networks:
+      - panel-net
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+networks:
+  panel-net:
+    driver: bridge
+
+volumes:
+  kali-home:
+  kali-tools:
