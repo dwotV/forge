@@ -7,6 +7,13 @@
 </p>
 <p align="center">A new hacking enviroment structure.</p>
 
+<p align="center">
+  <img src="assets-readme/forge-screenshot.png" alt="Forge interface">
+</p>
+
+---
+
+### Installation
 
 ```bash
 git clone https://github.com/dwotV/forge.git
