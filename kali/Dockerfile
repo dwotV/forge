@@ -154,14 +154,14 @@ RUN cat > /etc/forge/xfce4/xfconf/xfce-perchannel-xml/xfce4-desktop.xml << 'XFCO
       <property name="monitorVNC-0" type="empty">
         <property name="workspace0" type="empty">
           <property name="color-style" type="int" value="0"/>
-          <property name="image-style" type="int" value="1"/>
+          <property name="image-style" type="int" value="5"/>
           <property name="last-image" type="string" value="/usr/share/forge/forge-wallpaper.png"/>
         </property>
       </property>
       <property name="monitor0" type="empty">
         <property name="workspace0" type="empty">
           <property name="color-style" type="int" value="0"/>
-          <property name="image-style" type="int" value="1"/>
+          <property name="image-style" type="int" value="5"/>
           <property name="last-image" type="string" value="/usr/share/forge/forge-wallpaper.png"/>
         </property>
       </property>
