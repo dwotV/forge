@@ -116,6 +116,11 @@ RUN apt-get install -y --no-install-recommends \
 RUN apt-get install -y --no-install-recommends \
     metasploit-framework
 
+# ── Windows ───────────────────────────────────
+RUN apt-get install -y --no-install-recommends \
+    responder \
+    netexec
+
 # ── Limpiar caché para reducir tamaño ────────
 RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
