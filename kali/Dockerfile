@@ -127,6 +127,44 @@ RUN echo "es_MX.UTF-8 UTF-8" > /etc/locale.gen && \
 # ── Configurar zona horaria ───────────────────
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
+# ── Copiar wallpaper a la imagen ──────────────
+#    Se copia en /usr/share/forge/ para que esté
+#    disponible para cualquier usuario que se cree.
+COPY assets/forge-wallpaper.png /usr/share/forge/forge-wallpaper.png
+
+# ── Crear usuario dinámico en tiempo de build──
+#    El usuario real se crea en entrypoint.sh
+#    con las variables FORGE_USER/FORGE_PASSWORD.
+#    Aquí solo preparamos la estructura de Xfce
+#    que se copiará al home del usuario real.
+RUN mkdir -p /etc/forge/xfce4/xfconf/xfce-perchannel-xml
+ 
+# ── Config Xfce: wallpaper ────────────────────
+#    xfdesktop lee este XML para saber qué fondo usar.
+RUN cat > /etc/forge/xfce4/xfconf/xfce-perchannel-xml/xfce4-desktop.xml << 'XFCONF'
+<?xml version="1.0" encoding="UTF-8"?>
+<channel name="xfce4-desktop" version="1.0">
+  <property name="backdrop" type="empty">
+    <property name="screen0" type="empty">
+      <property name="monitorVNC-0" type="empty">
+        <property name="workspace0" type="empty">
+          <property name="color-style" type="int" value="0"/>
+          <property name="image-style" type="int" value="1"/>
+          <property name="last-image" type="string" value="/usr/share/forge/forge-wallpaper.png"/>
+        </property>
+      </property>
+      <property name="monitor0" type="empty">
+        <property name="workspace0" type="empty">
+          <property name="color-style" type="int" value="0"/>
+          <property name="image-style" type="int" value="1"/>
+          <property name="last-image" type="string" value="/usr/share/forge/forge-wallpaper.png"/>
+        </property>
+      </property>
+    </property>
+  </property>
+</channel>
+XFCONF
+ 
 # ── Crear usuario no-root: hacker ─────────────
 #    (Wireshark y otros piden no correr como root)
 RUN groupadd -f wireshark && \

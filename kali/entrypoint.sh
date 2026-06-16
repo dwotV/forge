@@ -7,6 +7,17 @@ set -e
 
 echo "[*] Iniciando contenedor Kali — Panel de Hacking"
 
+# ── Config de Xfce: copiar plantilla al home ──
+#    Incluye el wallpaper preconfigurado.
+#    Solo se copia si el usuario no tiene config propia
+#    (primera vez que arranca el contenedor).
+XFCE_DIR="/home/hacker/.config/xfce4/xfconf/xfce-perchannel-xml"
+if [[ ! -f "${XFCE_DIR}/xfce4-desktop.xml" ]]; then
+  echo "[*] Aplicando configuración de escritorio..."
+  mkdir -p "$XFCE_DIR"
+  cp /etc/forge/xfce4/xfconf/xfce-perchannel-xml/xfce4-desktop.xml "$XFCE_DIR/"
+fi
+
 # ── Iniciar D-Bus (necesario para Xfce) ──────
 mkdir -p /run/dbus
 dbus-daemon --system --fork 2>/dev/null || true
