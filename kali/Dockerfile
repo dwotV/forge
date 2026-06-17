@@ -60,6 +60,10 @@ RUN apt-get install -y --no-install-recommends \
     openvpn \
     unzip
 
+# SSH
+RUN apt-get install -y \
+    openssh-server
+
 # ── Herramientas de red y escaneo ─────────────
 RUN apt-get install -y --no-install-recommends \
     nmap \

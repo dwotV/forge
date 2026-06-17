@@ -9,6 +9,8 @@
 //    3. API de estado: qué apps están corriendo
 // ─────────────────────────────────────────────────────────────
 
+const pty = require('node-pty');
+
 const express    = require('express');
 const cors       = require('cors');
 const http       = require('http');
@@ -171,75 +173,75 @@ app.get('/api/health', async (_req, res) => {
 // ─────────────────────────────────────────────────────────────
 const wss = new WebSocketServer({ server, path: '/terminal' });
 
-wss.on('connection', async (ws, req) => {
-  const ip = req.socket.remoteAddress;
-  console.log(`[WS] Nueva conexión terminal desde ${ip}`);
+wss.on('connection', (ws) => {
+  console.log('[WS] Nueva terminal');
 
-  let stream = null;
+  const shell = pty.spawn(
 
-  try {
-    const container = docker.getContainer(KALI_CONTAINER);
+    'sshpass',
+    [
+      '-p',
+      'hacker',
+      'ssh',
+      '-o',
+      'StrictHostKeyChecking=no',
+      '-o',
+      'UserKnownHostsFile=/dev/null',
+      '-o',
+      'LogLevel=ERROR',
+      'hacker@kali'
+    ],
 
-    const exec = await container.exec({
-      Cmd:          ['/bin/zsh'],
-      AttachStdin:  true,
-      AttachStdout: true,
-      AttachStderr: true,
-      Tty:          true,       // ← PTY real: colores, interactividad completa
-      User:         'hacker',
-      Env:          [
-        'DISPLAY=:1',
-        'HOME=/home/hacker',
-        'TERM=xterm-256color',
-      ],
-      WorkingDir:   '/home/hacker',
-    });
-
-    stream = await exec.start({ hijack: true, stdin: true });
-
-    // Kali → xterm.js en el navegador
-    stream.on('data', chunk => {
-      if (ws.readyState === ws.OPEN) {
-        ws.send(chunk);
+    {
+      name:'xterm-256color',
+      cols:80,
+      rows:24,
+      cwd:'/',
+      env:{
+        ...process.env,
+        TERM:'xterm-256color'
       }
-    });
-
-    // xterm.js → bash en Kali
-    ws.on('message', data => {
-      if (stream && !stream.destroyed) {
-        // Los mensajes de resize llegan como JSON: { type:'resize', cols, rows }
-        try {
-          const msg = JSON.parse(data);
-          if (msg.type === 'resize') {
-            exec.resize({ w: msg.cols, h: msg.rows }).catch(() => {});
-            return;
-          }
-        } catch (_) { /* no es JSON, es input normal */ }
-        stream.write(data);
-      }
-    });
-
-    stream.on('end', () => {
-      console.log(`[WS] Stream cerrado para ${ip}`);
-      if (ws.readyState === ws.OPEN) ws.close();
-    });
-
-    stream.on('error', err => {
-      console.error('[WS] Error en stream:', err.message);
-      ws.close();
-    });
-
-  } catch (err) {
-    console.error('[WS] No se pudo abrir exec en Kali:', err.message);
-    if (ws.readyState === ws.OPEN) {
-      ws.send(`\r\n[ERROR] No se pudo conectar al contenedor Kali: ${err.message}\r\n`);
-      ws.close();
     }
-  }
+  );
 
-  ws.on('close', () => {
-    console.log(`[WS] Conexión cerrada desde ${ip}`);
-    if (stream && !stream.destroyed) stream.destroy();
+  shell.onData(data=>{
+
+    if(ws.readyState===ws.OPEN){
+
+      ws.send(data);
+
+    }
+
+  });
+
+  ws.on('message',raw=>{
+
+    const data=raw.toString();
+
+    try{
+
+      const msg=JSON.parse(data);
+
+      if(msg.type==='resize'){
+        if(msg.cols > 0 && msg.rows > 0){
+          shell.resize(
+            msg.cols,
+            msg.rows
+          );
+        }
+        return;
+      }
+
+    }catch{}
+
+    shell.write(data);
+
+  });
+
+  ws.on('close',()=>{
+
+    shell.kill();
+
   });
 });
 

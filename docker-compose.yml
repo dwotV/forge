@@ -46,6 +46,7 @@ services:
     environment:
       - KALI_CONTAINER=forge-kali
       - PORT=3000
+      - SSH_PASSWORD=kalipass
     volumes:
       # Montar el socket de Docker para poder hacer docker exec en Kali
       - /var/run/docker.sock:/var/run/docker.sock

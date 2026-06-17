@@ -43,6 +43,23 @@ fi
 chmod +x /home/hacker/.vnc/xstartup /home/hacker/.config/tigervnc/xstartup
 chown -R hacker:hacker /home/hacker/.vnc /home/hacker/.config
 
+# SSH
+touch /home/hacker/.hushlogin
+chown hacker:hacker /home/hacker/.hushlogin
+
+mkdir -p /run/sshd
+sed -i 's/#PasswordAuthentication yes/PasswordAuthentication yes/' /etc/ssh/sshd_config
+grep -q '^PubkeyAuthentication' /etc/ssh/sshd_config \
+  || echo 'PubkeyAuthentication yes' >> /etc/ssh/sshd_config
+grep -q '^PermitRootLogin' /etc/ssh/sshd_config \
+  || echo 'PermitRootLogin no' >> /etc/ssh/sshd_config
+grep -q '^UsePAM' /etc/ssh/sshd_config \
+  || echo 'UsePAM no' >> /etc/ssh/sshd_config
+
+echo "[*] Arrancando SSH..."
+
+/usr/sbin/sshd
+
 # ── Iniciar servidor VNC como usuario hacker ─
 echo "[*] Arrancando TigerVNC en :1 (puerto 5901)..."
 su -c "HOME=/home/hacker USER=hacker vncserver :1 \

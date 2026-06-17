@@ -447,7 +447,7 @@ function connectTerminal() {
   setWsStatus('connecting...', false);
 
   ws = new WebSocket(WS_URL);
-  ws.binaryType = 'arraybuffer';
+  //ws.binaryType = 'arraybuffer';
 
   ws.onopen = () => {
     setWsStatus('connected', true);
@@ -457,10 +457,10 @@ function connectTerminal() {
   };
 
   ws.onmessage = e => {
-    const data = e.data instanceof ArrayBuffer
+    /*const data = e.data instanceof ArrayBuffer
       ? new Uint8Array(e.data)
-      : e.data;
-    term.write(data);
+      : e.data;*/
+    term.write(e.data);
   };
 
   ws.onclose = () => {
