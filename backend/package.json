@@ -1,7 +1,7 @@
 {
-  "name": "kali-panel-backend",
+  "name": "forge-backend",
   "version": "1.0.0",
-  "description": "Backend del panel de hacking — WebSocket terminal + API lanzador de apps",
+  "description": "Backend of Forge — WebSocket terminal + Apps launcher API",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",

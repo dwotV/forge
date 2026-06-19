@@ -13,7 +13,7 @@ services:
     build:
       context: ./kali
     container_name: forge-kali
-    hostname: kali
+    hostname: forge
     environment:
       - VNC_PASSWORD=${VNC_PASSWORD:-kalipass}
       - VNC_RESOLUTION=${VNC_RESOLUTION:-1280x800}
