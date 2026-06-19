@@ -17,7 +17,7 @@ services:
         - KALI_PASSWORD=${KALI_PASSWORD}
         - VNC_PASSWORD=${KALI_PASSWORD}
         - TZ=${TIME_ZONE}
-        - LANG=${LANG}
+        - LANG=${LANG:-en_US.UTF-8}
     container_name: forge-kali
     hostname: forge
     environment:
