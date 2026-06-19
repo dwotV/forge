@@ -6,13 +6,18 @@
 FROM kalilinux/kali-rolling
 
 # ── Variables de entorno ──────────────────────
+
+ARG KALI_USER
+ARG KALI_PASSWORD
+
 ENV DEBIAN_FRONTEND=noninteractive \
     DISPLAY=:1 \
     VNC_PORT=5901 \
     NOVNC_PORT=6080 \
     VNC_RESOLUTION=1280x800 \
     VNC_DEPTH=24 \
-    VNC_PASSWORD=kalipass \
+    VNC_PASSWORD=${KALI_PASSWORD} \
+    KALI_USER=${KALI_USER} \
     LANG=es_MX.UTF-8 \
     TZ=America/Mexico_City
 
@@ -177,13 +182,13 @@ XFCONF
 # ── Crear usuario no-root: hacker ─────────────
 #    (Wireshark y otros piden no correr como root)
 RUN groupadd -f wireshark && \
-    useradd -m -s /bin/zsh -G sudo,wireshark hacker && \
-    echo "hacker:hacker" | chpasswd && \
-    echo "hacker ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+    useradd -m -s /bin/zsh -G sudo,wireshark "${KALI_USER}" && \
+    echo "${KALI_USER}:${KALI_USER}" | chpasswd && \
+    echo "${KALI_USER} ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
 # ── Configurar VNC para el usuario hacker ────
-USER hacker
-WORKDIR /home/hacker
+USER ${KALI_USER}
+WORKDIR /home/${KALI_USER}
 
 RUN mkdir -p ~/.vnc && \
     echo "$VNC_PASSWORD" | vncpasswd -f > ~/.vnc/passwd && \

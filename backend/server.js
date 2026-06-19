@@ -24,6 +24,8 @@ const docker = new Docker({ socketPath: '/var/run/docker.sock' });
 // ── Nombre del contenedor Kali ────────────────────────────────
 const KALI_CONTAINER = process.env.KALI_CONTAINER || 'forge-kali';
 const PORT           = process.env.PORT            || 3000;
+const KALI_USER      = process.env.KALI_USER      || 'hacker';
+const SSH_PASSWORD   = process.env.SSH_PASSWORD   || 'hacker';
 
 // ─────────────────────────────────────────────────────────────
 //  Catálogo de aplicaciones lanzables
@@ -181,7 +183,7 @@ wss.on('connection', (ws) => {
     'sshpass',
     [
       '-p',
-      'hacker',
+      SSH_PASSWORD,
       'ssh',
       '-o',
       'StrictHostKeyChecking=no',
@@ -189,7 +191,7 @@ wss.on('connection', (ws) => {
       'UserKnownHostsFile=/dev/null',
       '-o',
       'LogLevel=ERROR',
-      'hacker@kali'
+      `${KALI_USER}@forge`
     ],
 
     {

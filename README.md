@@ -17,6 +17,7 @@
 
 ```bash
 git clone https://github.com/dwotV/forge.git
+cp .env.example .env
 cd forge
 docker compose up -d --build
 ```

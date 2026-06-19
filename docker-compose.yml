@@ -12,10 +12,15 @@ services:
   kali:
     build:
       context: ./kali
+      args:
+        - KALI_USER=${KALI_USER}
+        - KALI_PASSWORD=${KALI_PASSWORD}
+        - VNC_PASSWORD=${KALI_PASSWORD}
     container_name: forge-kali
     hostname: forge
     environment:
-      - VNC_PASSWORD=${VNC_PASSWORD:-kalipass}
+      - KALI_USER=${KALI_USER}
+      - VNC_PASSWORD=${KALI_PASSWORD}
       - VNC_RESOLUTION=${VNC_RESOLUTION:-1280x800}
       - TZ=America/Mexico_City
     volumes:
@@ -46,7 +51,8 @@ services:
     environment:
       - KALI_CONTAINER=forge-kali
       - PORT=3000
-      - SSH_PASSWORD=kalipass
+      - KALI_USER=${KALI_USER}
+      - SSH_PASSWORD=${KALI_PASSWORD}
     volumes:
       # Montar el socket de Docker para poder hacer docker exec en Kali
       - /var/run/docker.sock:/var/run/docker.sock
@@ -62,6 +68,8 @@ services:
   frontend:
     image: nginx:alpine
     container_name: forge-frontend
+    environment:
+      - VNC_PASSWORD=${KALI_PASSWORD}
     volumes:
       - ./frontend:/usr/share/nginx/html:ro
       - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro

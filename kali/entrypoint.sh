@@ -11,7 +11,7 @@ echo "[*] Iniciando contenedor Kali — Panel de Hacking"
 #    Incluye el wallpaper preconfigurado.
 #    Solo se copia si el usuario no tiene config propia
 #    (primera vez que arranca el contenedor).
-XFCE_DIR="/home/hacker/.config/xfce4/xfconf/xfce-perchannel-xml"
+XFCE_DIR="/home/${KALI_USER}/.config/xfce4/xfconf/xfce-perchannel-xml"
 if [[ ! -f "${XFCE_DIR}/xfce4-desktop.xml" ]]; then
   echo "[*] Aplicando configuración de escritorio..."
   mkdir -p "$XFCE_DIR"
@@ -26,26 +26,26 @@ dbus-daemon --system --fork 2>/dev/null || true
 rm -f /tmp/.X1-lock /tmp/.X11-unix/X1 2>/dev/null || true
 
 # ── Configurar VNC en tiempo de ejecución (evita problemas de volumen persistente) ──
-mkdir -p /home/hacker/.vnc /home/hacker/.config/tigervnc
-echo "${VNC_PASSWORD:-kalipass}" | vncpasswd -f > /home/hacker/.vnc/passwd
-if [ ! "/home/hacker/.vnc/passwd" -ef "/home/hacker/.config/tigervnc/passwd" ]; then
-    cp /home/hacker/.vnc/passwd /home/hacker/.config/tigervnc/passwd
+mkdir -p /home/${KALI_USER}/.vnc /home/${KALI_USER}/.config/tigervnc
+echo "${VNC_PASSWORD}" | vncpasswd -f > /home/${KALI_USER}/.vnc/passwd
+if [ ! "/home/${KALI_USER}/.vnc/passwd" -ef "/home/${KALI_USER}/.config/tigervnc/passwd" ]; then
+    cp /home/${KALI_USER}/.vnc/passwd /home/${KALI_USER}/.config/tigervnc/passwd
 fi
-chmod 600 /home/hacker/.vnc/passwd /home/hacker/.config/tigervnc/passwd
+chmod 600 /home/${KALI_USER}/.vnc/passwd /home/${KALI_USER}/.config/tigervnc/passwd
 
 printf '#!/bin/sh\n\
 unset SESSION_MANAGER\n\
 unset DBUS_SESSION_BUS_ADDRESS\n\
-exec dbus-run-session startxfce4\n' > /home/hacker/.vnc/xstartup
-if [ ! "/home/hacker/.vnc/xstartup" -ef "/home/hacker/.config/tigervnc/xstartup" ]; then
-    cp /home/hacker/.vnc/xstartup /home/hacker/.config/tigervnc/xstartup
+exec dbus-run-session startxfce4\n' > /home/${KALI_USER}/.vnc/xstartup
+if [ ! "/home/${KALI_USER}/.vnc/xstartup" -ef "/home/${KALI_USER}/.config/tigervnc/xstartup" ]; then
+    cp /home/${KALI_USER}/.vnc/xstartup /home/${KALI_USER}/.config/tigervnc/xstartup
 fi
-chmod +x /home/hacker/.vnc/xstartup /home/hacker/.config/tigervnc/xstartup
-chown -R hacker:hacker /home/hacker/.vnc /home/hacker/.config
+chmod +x /home/${KALI_USER}/.vnc/xstartup /home/${KALI_USER}/.config/tigervnc/xstartup
+chown -R ${KALI_USER}:${KALI_USER} /home/${KALI_USER}/.vnc /home/${KALI_USER}/.config
 
 # SSH
-touch /home/hacker/.hushlogin
-chown hacker:hacker /home/hacker/.hushlogin
+touch /home/${KALI_USER}/.hushlogin
+chown ${KALI_USER}:${KALI_USER} /home/${KALI_USER}/.hushlogin
 
 mkdir -p /run/sshd
 sed -i 's/#PasswordAuthentication yes/PasswordAuthentication yes/' /etc/ssh/sshd_config
@@ -62,11 +62,11 @@ echo "[*] Arrancando SSH..."
 
 # ── Iniciar servidor VNC como usuario hacker ─
 echo "[*] Arrancando TigerVNC en :1 (puerto 5901)..."
-su -c "HOME=/home/hacker USER=hacker vncserver :1 \
+su -c "HOME=/home/${KALI_USER} USER=${KALI_USER} vncserver :1 \
     -geometry ${VNC_RESOLUTION} \
     -depth ${VNC_DEPTH} \
     -localhost no \
-    -rfbport ${VNC_PORT}" hacker
+    -rfbport ${VNC_PORT}" ${KALI_USER}
 
 # Esperar a que el display esté listo
 sleep 2
