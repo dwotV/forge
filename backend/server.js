@@ -63,8 +63,8 @@ async function execInKali(cmdArray, opts = {}) {
     Cmd: cmdArray,
     AttachStdout: true,
     AttachStderr: true,
-    User: opts.user || 'hacker',
-    Env: ['DISPLAY=:1', 'HOME=/home/hacker', ...(opts.env || [])],
+    User: opts.user || KALI_USER,
+    Env: ['DISPLAY=:1', `HOME=/home/${KALI_USER}`, ...(opts.env || [])],
     ...opts,
   });
   const stream = await exec.start({ Detach: opts.detach || false });
