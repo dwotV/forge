@@ -43,6 +43,7 @@ const APPS = {
   autopsy:    { label: 'Autopsy',         cmd: 'autopsy',                        icon: '🔍' },
   fern:       { label: 'Fern WiFi',       cmd: 'fern-wifi-cracker',              icon: '📡' },
   ettercap:   { label: 'Ettercap',        cmd: 'ettercap -G',                    icon: '🕸️'  },
+  ghidra:     { label: 'Ghidra',          cmd: 'ghidra',                         icon: '🐉' },
   terminal:   { label: 'Terminal Xfce',   cmd: 'xfce4-terminal',                 icon: '🖥️'  },
   files:      { label: 'Gestor archivos', cmd: 'thunar',                         icon: '📁' },
 };

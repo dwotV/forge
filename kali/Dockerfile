@@ -128,7 +128,8 @@ RUN apt-get install -y --no-install-recommends \
 # ── Windows ───────────────────────────────────
 RUN apt-get install -y --no-install-recommends \
     responder \
-    netexec
+    netexec \
+    ghidra
 
 # ── Limpiar caché para reducir tamaño ────────
 RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
