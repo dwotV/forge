@@ -9,6 +9,8 @@ FROM kalilinux/kali-rolling
 
 ARG KALI_USER
 ARG KALI_PASSWORD
+ARG LANG
+ARG TZ
 
 ENV DEBIAN_FRONTEND=noninteractive \
     DISPLAY=:1 \
@@ -18,8 +20,8 @@ ENV DEBIAN_FRONTEND=noninteractive \
     VNC_DEPTH=24 \
     VNC_PASSWORD=${KALI_PASSWORD} \
     KALI_USER=${KALI_USER} \
-    LANG=es_MX.UTF-8 \
-    TZ=America/Mexico_City
+    LANG=${LANG} \
+    TZ=${TZ}
 
 # ── Actualizar sistema base ───────────────────
 RUN apt-get update && apt-get upgrade -y
@@ -135,9 +137,9 @@ RUN apt-get install -y --no-install-recommends \
 RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # ── Configurar locale ─────────────────────────
-RUN echo "es_MX.UTF-8 UTF-8" > /etc/locale.gen && \
+RUN echo "${LANG} UTF-8" > /etc/locale.gen && \
     locale-gen && \
-    update-locale LANG=es_MX.UTF-8
+    update-locale LANG=${LANG}
 
 # ── Configurar zona horaria ───────────────────
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone

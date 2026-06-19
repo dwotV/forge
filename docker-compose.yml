@@ -16,13 +16,14 @@ services:
         - KALI_USER=${KALI_USER}
         - KALI_PASSWORD=${KALI_PASSWORD}
         - VNC_PASSWORD=${KALI_PASSWORD}
+        - TZ=${TIME_ZONE}
+        - LANG=${LANG}
     container_name: forge-kali
     hostname: forge
     environment:
       - KALI_USER=${KALI_USER}
       - VNC_PASSWORD=${KALI_PASSWORD}
       - VNC_RESOLUTION=${VNC_RESOLUTION:-1280x800}
-      - TZ=America/Mexico_City
     volumes:
       - kali-home:/home/${KALI_USER} # persistencia del home del usuario
       - kali-tools:/opt/tools        # herramientas personalizadas
