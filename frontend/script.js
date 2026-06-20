@@ -37,8 +37,13 @@ function getActiveTab() {
 
 // Mantiene los nombres "shell N" consecutivos según la posición actual
 // de cada pestaña, sin importar el id interno con el que se creó.
+// Las pestañas con nombre personalizado (editado por el usuario) no se tocan.
 function renumberTabs() {
-  tabs.forEach((t, i) => { t.label = `shell ${i + 1}`; });
+  let n = 0;
+  tabs.forEach(t => {
+    n++;
+    if (!t.customName) t.label = `shell ${n}`;
+  });
 }
 
 function escapeHtml(str) {
@@ -92,6 +97,8 @@ function createTab() {
     label: `shell ${tabCounter}`,
     wsConnected: false,
     wsStatusText: 'desconectado',
+    editing: false,
+    customName: false,
   };
   tabs.push(tabObj);
 
@@ -162,12 +169,83 @@ function renderTabsBar() {
     const el = document.createElement('div');
     el.className = 'tab-item' + (t.id === activeTabId ? ' active' : '');
     el.onclick = () => switchTab(t.id);
+    el.oncontextmenu = (e) => { e.preventDefault(); openTabContextMenu(e, t.id); };
+
+    const nameHtml = t.editing
+      ? `<input
+           class="tab-name-input"
+           id="name-input-${t.id}"
+           value="${escapeHtml(t.label)}"
+           onclick="event.stopPropagation()"
+           onkeydown="handleTabNameKeydown(event, '${t.id}')"
+           onblur="commitTabName('${t.id}', this.value)"
+         />`
+      : `<span class="tab-name">${escapeHtml(t.label)}</span>`;
+
     el.innerHTML = `
-      <span class="tab-name">${escapeHtml(t.label)}</span>
+      ${nameHtml}
       ${tabs.length > 1 ? `<button class="tab-close" title="Close tab" onclick="closeTab('${t.id}', event)">×</button>` : ''}
     `;
     bar.appendChild(el);
   });
+
+  // Si una pestaña entró en modo edición, enfocar su input
+  const editingTab = tabs.find(t => t.editing);
+  if (editingTab) {
+    setTimeout(() => {
+      const input = document.getElementById(`name-input-${editingTab.id}`);
+      if (input) { input.focus(); input.select(); }
+    }, 0);
+  }
+}
+
+// ─────────────────────────────────────────────────────
+//  Menú contextual de pestañas (clic derecho)
+// ─────────────────────────────────────────────────────
+let contextMenuTabId = null;
+
+function openTabContextMenu(e, tabId) {
+  contextMenuTabId = tabId;
+  const menu = document.getElementById('tab-context-menu');
+  menu.style.left = `${e.clientX}px`;
+  menu.style.top  = `${e.clientY}px`;
+  menu.classList.add('open');
+}
+
+function closeTabContextMenu() {
+  document.getElementById('tab-context-menu').classList.remove('open');
+  contextMenuTabId = null;
+}
+
+function startEditTabName() {
+  const tabId = contextMenuTabId;
+  closeTabContextMenu();
+  const t = tabs.find(x => x.id === tabId);
+  if (!t) return;
+  t.editing = true;
+  renderTabsBar();
+}
+
+function commitTabName(tabId, value) {
+  const t = tabs.find(x => x.id === tabId);
+  if (!t) return;
+  const trimmed = (value || '').trim();
+  if (trimmed) {
+    t.label = trimmed;
+    t.customName = true;
+  }
+  t.editing = false;
+  renderTabsBar();
+}
+
+function handleTabNameKeydown(e, tabId) {
+  if (e.key === 'Enter') {
+    e.target.blur(); // dispara commitTabName vía onblur
+  } else if (e.key === 'Escape') {
+    const t = tabs.find(x => x.id === tabId);
+    if (t) t.editing = false;
+    renderTabsBar();
+  }
 }
 
 // ─────────────────────────────────────────────────────
@@ -466,9 +544,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Cerrar el modal con Escape / aceptar con Enter
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') closeTargetModal();
+    if (e.key === 'Escape') {
+      closeTargetModal();
+      closeTabContextMenu();
+    }
     if (e.key === 'Enter' && document.getElementById('target-modal-backdrop').classList.contains('open')) {
       acceptTarget();
     }
   });
+
+  // Cerrar el menú contextual de pestañas al hacer clic fuera o hacer scroll
+  document.addEventListener('click', (e) => {
+    const menu = document.getElementById('tab-context-menu');
+    if (menu.classList.contains('open') && !menu.contains(e.target)) {
+      closeTabContextMenu();
+    }
+  });
+  document.addEventListener('scroll', closeTabContextMenu, true);
 });
