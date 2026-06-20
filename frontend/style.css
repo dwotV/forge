@@ -190,18 +190,20 @@
       display: flex;
       flex-direction: column;
       overflow: hidden;
+      position: relative; /* permite que el visor GUI se posicione encima */
     }
 
-    /* Panel noVNC (oculto por defecto, desliza desde arriba) */
+    /* Panel noVNC (oculto por defecto, se superpone sobre la terminal
+       SIN alterar el layout — así el iframe nunca cambia de tamaño y
+       no dispara un resize del entorno gráfico remoto) */
     #gui-panel {
+      position: absolute;
+      inset: 0;
       background: #000;
-      border-bottom: 1px solid var(--border);
-      overflow: hidden;
-      height: 0;
-      transition: height .35s cubic-bezier(.4,0,.2,1);
-      flex-shrink: 0;
+      z-index: 10;
+      display: none;
     }
-    #gui-panel.open { height: 55vh; }
+    #gui-panel.open { display: block; }
     #gui-panel iframe {
       width: 100%; height: 100%;
       border: none;
@@ -284,7 +286,7 @@
       gap: 8px;
       background: var(--bg3);
       border: 1px solid var(--border);
-      color: var(--text-hi);
+      color: var(--text-dim);
       font-family: var(--mono);
       font-size: 11px;
       padding: 5px 12px;

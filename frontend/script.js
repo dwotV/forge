@@ -15,7 +15,7 @@ const APP_SECTIONS = {
 // ── Estado ─────────────────────────────────────────────
 let term, fitAddon, ws, statusInterval, guiOpen = false;
 let appStatus = {};  // { wireshark: true, burpsuite: false, ... }
-let currentTarget = null;
+let currentTarget = null; // { host, ip }
 
 // ─────────────────────────────────────────────────────
 //  xterm.js — iniciar terminal
@@ -119,8 +119,6 @@ function toggleGUI() {
   guiOpen = !guiOpen;
   document.getElementById('gui-panel').classList.toggle('open', guiOpen);
   document.getElementById('btn-gui').classList.toggle('active', guiOpen);
-  // Reajustar terminal tras la animación
-  setTimeout(() => fitAddon && fitAddon.fit(), 380);
 }
 
 // ─────────────────────────────────────────────────────
@@ -313,7 +311,7 @@ function renderTargetButton() {
   btn.title = '';
   btn.innerHTML = `
     <span class="target-host">${escapeHtml(currentTarget.host)}</span>
-    <span class="target-sep">//</span>
+    <span class="target-sep">·</span>
     <span class="target-ip" onclick="copyTargetIp(event)" title="Click to copy">
       <span class="ip-value">${escapeHtml(currentTarget.ip)}</span>
       <span class="ip-copy-label">copy ip</span>
@@ -336,10 +334,12 @@ document.addEventListener('DOMContentLoaded', () => {
   renderAppButtons();
   healthCheck();
   refreshStatus();
+  renderTargetButton();
   // Polling
   setInterval(healthCheck,   10_000);
   setInterval(refreshStatus,  5_000);
 
+  // Cerrar el modal con Escape / aceptar con Enter
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') closeTargetModal();
     if (e.key === 'Enter' && document.getElementById('target-modal-backdrop').classList.contains('open')) {
