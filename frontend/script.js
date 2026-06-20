@@ -15,6 +15,7 @@ const APP_SECTIONS = {
 // ── Estado ─────────────────────────────────────────────
 let term, fitAddon, ws, statusInterval, guiOpen = false;
 let appStatus = {};  // { wireshark: true, burpsuite: false, ... }
+let currentTarget = null;
 
 // ─────────────────────────────────────────────────────
 //  xterm.js — iniciar terminal
@@ -249,6 +250,85 @@ async function renderAppButtons() {
 }
 
 // ─────────────────────────────────────────────────────
+//  SET TARGET
+// ─────────────────────────────────────────────────────
+function onTargetButtonClick() {
+  // Si ya hay target, el botón no abre el modal (el × lo limpia)
+  if (currentTarget) return;
+  openTargetModal();
+}
+ 
+function openTargetModal() {
+  document.getElementById('target-host-input').value = '';
+  document.getElementById('target-ip-input').value = '';
+  document.getElementById('target-modal-backdrop').classList.add('open');
+  setTimeout(() => document.getElementById('target-host-input').focus(), 50);
+}
+ 
+function closeTargetModal() {
+  document.getElementById('target-modal-backdrop').classList.remove('open');
+}
+ 
+function acceptTarget() {
+  const host = document.getElementById('target-host-input').value.trim();
+  const ip   = document.getElementById('target-ip-input').value.trim();
+ 
+  if (!host || !ip) {
+    showToast('Hostname and IP are required', true);
+    return;
+  }
+ 
+  currentTarget = { host, ip };
+  renderTargetButton();
+  closeTargetModal();
+  showToast(`Target set: ${host} (${ip})`);
+}
+ 
+function clearTarget(e) {
+  if (e) e.stopPropagation();
+  currentTarget = null;
+  renderTargetButton();
+  showToast('Target cleared');
+}
+ 
+function copyTargetIp(e) {
+  e.stopPropagation();
+  if (!currentTarget) return;
+  navigator.clipboard.writeText(currentTarget.ip)
+    .then(() => showToast('IP copied to clipboard'))
+    .catch(() => showToast('Could not copy IP', true));
+}
+ 
+function renderTargetButton() {
+  const btn = document.getElementById('btn-target');
+ 
+  if (!currentTarget) {
+    btn.classList.remove('has-target');
+    btn.innerHTML = '[ SET TARGET ]';
+    btn.title = 'Set target';
+    return;
+  }
+ 
+  btn.classList.add('has-target');
+  btn.title = '';
+  btn.innerHTML = `
+    <span class="target-host">${escapeHtml(currentTarget.host)}</span>
+    <span class="target-sep">//</span>
+    <span class="target-ip" onclick="copyTargetIp(event)" title="Click to copy">
+      <span class="ip-value">${escapeHtml(currentTarget.ip)}</span>
+      <span class="ip-copy-label">copy ip</span>
+    </span>
+    <button class="target-clear" onclick="clearTarget(event)" title="Clear target">×</button>
+  `;
+}
+ 
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+// ─────────────────────────────────────────────────────
 //  Arranque
 // ─────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
@@ -259,4 +339,11 @@ document.addEventListener('DOMContentLoaded', () => {
   // Polling
   setInterval(healthCheck,   10_000);
   setInterval(refreshStatus,  5_000);
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeTargetModal();
+    if (e.key === 'Enter' && document.getElementById('target-modal-backdrop').classList.contains('open')) {
+      acceptTarget();
+    }
+  });
 });

@@ -277,3 +277,147 @@
     #toast.show { opacity: 1; transform: translateY(0); }
     #toast.error { border-left-color: var(--red); }
 
+/* ── Botón SET TARGET ──────────────────────── */
+    #btn-target {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      color: var(--text-hi);
+      font-family: var(--mono);
+      font-size: 11px;
+      padding: 5px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background .2s, border-color .2s, color .2s;
+      letter-spacing: 0.04em;
+    }
+    #btn-target:hover {
+      border-color: var(--text-dim);
+      color: var(--text-hi);
+    }
+    #btn-target.has-target {
+      background: var(--bg3);
+      border-color: var(--text-dim);
+      color: var(--text-hi);
+      cursor: default;
+    }
+    #btn-target .target-host {
+      color: var(--text-hi);
+      font-weight: 500;
+    }
+    #btn-target.has-target .target-host { color: var(--text-hi); }
+    #btn-target .target-sep {
+      color: var(--text-dim);
+      opacity: 0.5;
+    }
+    #btn-target .target-ip {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--green);
+      font-weight: 700;
+      text-shadow: 0 0 8px rgba(0,255,136,0.5);
+      letter-spacing: 0.02em;
+      cursor: pointer;
+    }
+    #btn-target .target-ip .ip-value { transition: opacity .1s; }
+    #btn-target .target-ip .ip-copy-label {
+      display: none;
+      position: absolute;
+      left: 0; right: 0; top: 0;
+      text-align: center;
+      white-space: nowrap;
+      color: var(--green);
+      font-weight: 700;
+      text-shadow: none;
+    }
+    #btn-target .target-ip:hover .ip-value { opacity: 0; }
+    #btn-target .target-ip:hover .ip-copy-label { display: inline; }
+    #btn-target .target-clear {
+      background: none;
+      border: none;
+      color: var(--text-dim);
+      font-size: 13px;
+      line-height: 1;
+      cursor: pointer;
+      padding: 0 0 0 2px;
+      font-family: var(--mono);
+      transition: color .15s;
+    }
+    #btn-target .target-clear:hover { color: var(--red); }
+ 
+    /* ── Modal SET TARGET ──────────────────────── */
+    #target-modal-backdrop {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.6);
+      z-index: 2000;
+      align-items: center;
+      justify-content: center;
+    }
+    #target-modal-backdrop.open { display: flex; }
+    #target-modal {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-top: 2px solid var(--green);
+      border-radius: 6px;
+      width: 320px;
+      padding: 18px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+    }
+    #target-modal h3 {
+      font-size: 12px;
+      color: var(--green);
+      letter-spacing: 0.06em;
+      margin-bottom: 14px;
+      font-weight: 500;
+    }
+    #target-modal label {
+      display: block;
+      font-size: 10px;
+      color: var(--text-dim);
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+    #target-modal input {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text-hi);
+      font-family: var(--mono);
+      font-size: 13px;
+      padding: 7px 9px;
+      border-radius: 4px;
+      margin-bottom: 14px;
+      outline: none;
+    }
+    #target-modal input:focus { border-color: var(--green-dim); }
+    #target-modal .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+    #target-modal button {
+      font-family: var(--mono);
+      font-size: 11px;
+      padding: 6px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      letter-spacing: 0.04em;
+    }
+    #target-modal .btn-cancel {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+    }
+    #target-modal .btn-cancel:hover { color: var(--text-hi); border-color: var(--text-dim); }
+    #target-modal .btn-accept {
+      background: var(--green-bg);
+      border: 1px solid var(--green-dim);
+      color: var(--green);
+    }
+    #target-modal .btn-accept:hover { background: rgba(0,255,136,0.14); }

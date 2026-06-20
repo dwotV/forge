@@ -35,6 +35,9 @@
       <span id="kali-status">conectando...</span>
     </div>
     <div class="spacer"></div>
+     <button id="btn-target" onclick="onTargetButtonClick()" title="Set target">
+      [ SET TARGET ]
+    </button>
     <button id="btn-gui" onclick="toggleGUI()" title="Show/hide GUI app viewer">
       [ DESKTOP VIEWER ]
     </button>
@@ -83,6 +86,21 @@
     <div id="terminal"></div>
 
   </main>
+</div>
+
+<!-- Modal SET TARGET -->
+<div id="target-modal-backdrop" onclick="if(event.target===this) closeTargetModal()">
+  <div id="target-modal">
+    <h3>// SET TARGET</h3>
+    <label for="target-host-input">Hostname</label>
+    <input id="target-host-input" type="text" placeholder="e.g. dc01.corp.local" autocomplete="off">
+    <label for="target-ip-input">IP</label>
+    <input id="target-ip-input" type="text" placeholder="e.g. 192.168.1.10" autocomplete="off">
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeTargetModal()">[ cancel ]</button>
+      <button class="btn-accept" onclick="acceptTarget()">[ accept ]</button>
+    </div>
+  </div>
 </div>
 
 <!-- Toast de notificaciones -->
