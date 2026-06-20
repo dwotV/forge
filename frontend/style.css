@@ -195,7 +195,7 @@
     }
     .dropdown-btn .app-name { flex: 1; }
     .dropdown-btn .dropdown-arrow-wrap {
-      color: var(--text-dim);
+      color: var(--text-hi);
       font-size: 12px;
       flex-shrink: 0;
     }
@@ -441,7 +441,7 @@
       gap: 8px;
       background: var(--bg3);
       border: 1px solid var(--border);
-      color: var(--text-dim);
+      color: var(--text-hi);
       font-family: var(--mono);
       font-size: 11px;
       padding: 5px 12px;
