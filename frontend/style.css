@@ -1,0 +1,279 @@
+/* ── Variables ─────────────────────────────── */
+    :root {
+      --bg:        #0d0f14;
+      --bg2:       #1a1d24;
+      --bg3:       #21242e;
+      --border:    #2a2e3a;
+      --green:     #00ff88;
+      --green-dim: #00cc6a;
+      --green-bg:  rgba(0, 255, 136, 0.07);
+      --red:       #ff4757;
+      --amber:     #ffa502;
+      --text:      #c8cdd8;
+      --text-dim:  #555c6e;
+      --text-hi:   #e8ecf4;
+      --mono:      'JetBrains Mono', monospace;
+    }
+
+    /* ── Reset ─────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(--text); font-family: var(--mono); font-size: 13px; }
+
+    /* ── Scanlines CRT — la firma visual ──────── */
+    body::after {
+      content: '';
+      position: fixed; inset: 0;
+      background: repeating-linear-gradient(
+        to bottom,
+        transparent,
+        transparent 2px,
+        rgba(0,0,0,0.08) 2px,
+        rgba(0,0,0,0.08) 4px
+      );
+      pointer-events: none;
+      z-index: 9999;
+    }
+
+    /* ── Layout principal ──────────────────────── */
+    #root {
+      display: grid;
+      grid-template-rows: 42px 1fr;
+      grid-template-columns: 220px 1fr;
+      grid-template-areas:
+        "topbar topbar"
+        "sidebar main";
+      height: 100vh;
+    }
+
+    /* ── Topbar ────────────────────────────────── */
+    #topbar {
+      grid-area: topbar;
+      background: var(--bg2);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
+      gap: 12px;
+    }
+    #topbar .logo {
+      color: var(--green);
+      font-weight: 700;
+      font-size: 14px;
+      letter-spacing: 0.08em;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    #topbar .logo .bracket { color: var(--text-dim); font-weight: 300; }
+    #topbar .sep { color: var(--border); }
+    #topbar .status-pill {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      color: var(--text-dim);
+    }
+    #topbar .dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--text-dim);
+      transition: background .3s;
+    }
+    #topbar .dot.alive { background: var(--green); box-shadow: 0 0 6px var(--green); }
+    #topbar .dot.dead  { background: var(--red);   box-shadow: 0 0 6px var(--red); }
+    .spacer { flex: 1; }
+    #btn-gui {
+      background: var(--green-bg);
+      border: 1px solid var(--green-dim);
+      color: var(--green);
+      font-family: var(--mono);
+      font-size: 11px;
+      padding: 5px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background .2s;
+      letter-spacing: 0.04em;
+    }
+    #btn-gui:hover { background: rgba(0,255,136,0.14); }
+    #btn-gui.active { background: rgba(0,255,136,0.18); }
+
+    /* ── Sidebar ────────────────────────────────── */
+    #sidebar {
+      grid-area: sidebar;
+      background: var(--bg2);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: var(--border) transparent;
+    }
+    .sidebar-section {
+      padding: 14px 12px 6px;
+    }
+    .sidebar-label {
+      font-size: 10px;
+      font-weight: 500;
+      letter-spacing: 0.12em;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      padding: 0 4px 8px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 8px;
+    }
+
+    /* ── Botones de apps ───────────────────────── */
+    .app-btn {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      width: 100%;
+      background: none;
+      border: 1px solid transparent;
+      border-radius: 6px;
+      padding: 7px 10px;
+      cursor: pointer;
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--text);
+      text-align: left;
+      transition: background .15s, border-color .15s, color .15s;
+      margin-bottom: 3px;
+      position: relative;
+    }
+    .app-btn:hover {
+      background: var(--bg3);
+      border-color: var(--border);
+      color: var(--text-hi);
+    }
+    .app-btn.running {
+      border-color: var(--green-dim);
+      background: var(--green-bg);
+      color: var(--green);
+    }
+    .app-btn .app-icon { font-size: 14px; flex-shrink: 0; }
+    .app-btn .app-name { flex: 1; }
+    /* Pulso cuando la app está corriendo */
+    .app-btn .pulse {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--green);
+      opacity: 0;
+      transition: opacity .3s;
+    }
+    .app-btn.running .pulse {
+      opacity: 1;
+      animation: pulse 1.4s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(0,255,136,.6); }
+      50%       { box-shadow: 0 0 0 4px rgba(0,255,136,0); }
+    }
+    /* Botón kill (×) visible en hover cuando está running */
+    .app-btn .kill-btn {
+      display: none;
+      background: none;
+      border: none;
+      color: var(--red);
+      font-size: 14px;
+      cursor: pointer;
+      padding: 0 2px;
+      font-family: var(--mono);
+      line-height: 1;
+    }
+    .app-btn.running:hover .pulse { display: none; }
+    .app-btn.running:hover .kill-btn { display: block; }
+
+    /* ── Main — terminal + visor GUI ──────────── */
+    #main {
+      grid-area: main;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* Panel noVNC (oculto por defecto, desliza desde arriba) */
+    #gui-panel {
+      background: #000;
+      border-bottom: 1px solid var(--border);
+      overflow: hidden;
+      height: 0;
+      transition: height .35s cubic-bezier(.4,0,.2,1);
+      flex-shrink: 0;
+    }
+    #gui-panel.open { height: 55vh; }
+    #gui-panel iframe {
+      width: 100%; height: 100%;
+      border: none;
+      display: block;
+    }
+
+    /* Cabecera de la terminal */
+    #term-header {
+      background: var(--bg2);
+      border-bottom: 1px solid var(--border);
+      padding: 0 14px;
+      height: 34px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+    #term-header .tab {
+      font-size: 11px;
+      color: var(--green);
+      border-bottom: 2px solid var(--green);
+      padding: 0 2px 4px;
+      letter-spacing: 0.04em;
+    }
+    #term-header .ws-status {
+      font-size: 10px;
+      color: var(--text-dim);
+      margin-left: auto;
+    }
+    #term-header .ws-status.conn { color: var(--green-dim); }
+    #btn-reconnect {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      font-family: var(--mono);
+      font-size: 10px;
+      padding: 3px 8px;
+      border-radius: 3px;
+      cursor: pointer;
+      transition: color .15s, border-color .15s;
+    }
+    #btn-reconnect:hover { color: var(--text-hi); border-color: var(--text-dim); }
+
+    /* Contenedor xterm */
+    #terminal {
+      flex: 1;
+      overflow: hidden;
+      padding: 8px;
+      background: var(--bg);
+      scrollbar-color: #555555 transparent;
+    }
+    #terminal .xterm { height: 100%; }
+    #terminal .xterm-viewport { background: var(--bg) !important; }
+
+    /* ── Notificación toast ────────────────────── */
+    #toast {
+      position: fixed;
+      bottom: 20px; right: 20px;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--green);
+      color: var(--text-hi);
+      font-size: 12px;
+      padding: 10px 16px;
+      border-radius: 4px;
+      opacity: 0;
+      transform: translateY(8px);
+      transition: opacity .2s, transform .2s;
+      pointer-events: none;
+      z-index: 1000;
+      max-width: 280px;
+    }
+    #toast.show { opacity: 1; transform: translateY(0); }
+    #toast.error { border-left-color: var(--red); }
+
