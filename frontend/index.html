@@ -46,20 +46,13 @@
   <!-- ── Sidebar: lanzador de apps ──────────────── -->
   <aside id="sidebar">
     <div class="sidebar-section">
-      <div class="sidebar-label">web &amp; proxy</div>
-      <div id="apps-web"></div>
-    </div>
-    <div class="sidebar-section">
-      <div class="sidebar-label">redes</div>
-      <div id="apps-net"></div>
-    </div>
-    <div class="sidebar-section">
-      <div class="sidebar-label">passwords</div>
-      <div id="apps-pass"></div>
-    </div>
-    <div class="sidebar-section">
-      <div class="sidebar-label">forense &amp; extra</div>
-      <div id="apps-other"></div>
+      <div id="apps-quick"></div>
+      <button id="tools-dropdown-btn" class="app-btn dropdown-btn" onclick="toggleToolsDropdown()">
+        <span class="app-icon">🛠️</span>
+        <span class="app-name">Tools</span>
+        <span class="dropdown-arrow-wrap">[ <span class="dropdown-arrow">▾</span> ]</span>
+      </button>
+      <div id="apps-tools" class="dropdown-list"></div>
     </div>
   </aside>
 
@@ -74,16 +67,17 @@
       </iframe>
     </div>
 
-    <!-- Cabecera terminal -->
+    <!-- Cabecera terminal — gestor de pestañas -->
     <div id="term-header">
-      <span class="tab">shell — hacker@kali</span>
+      <div id="tabs-bar"></div>
+      <button id="btn-new-tab" onclick="createTab()" title="New tab">+</button>
       <div class="spacer"></div>
       <span class="ws-status" id="ws-label">desconectado</span>
-      <button id="btn-reconnect" onclick="connectTerminal()">reconnect</button>
+      <button id="btn-reconnect" onclick="reconnectActiveTab()">reconnect</button>
     </div>
 
-    <!-- Terminal xterm.js -->
-    <div id="terminal"></div>
+    <!-- Terminales xterm.js (una por pestaña) -->
+    <div id="terminal-panes"></div>
 
   </main>
 </div>
@@ -91,14 +85,14 @@
 <!-- Modal SET TARGET -->
 <div id="target-modal-backdrop" onclick="if(event.target===this) closeTargetModal()">
   <div id="target-modal">
-    <h3>// SET TARGET</h3>
+    <h3>[ SET TARGET ]</h3>
     <label for="target-host-input">Hostname</label>
     <input id="target-host-input" type="text" placeholder="e.g. dc01.corp.local" autocomplete="off">
     <label for="target-ip-input">IP</label>
     <input id="target-ip-input" type="text" placeholder="e.g. 192.168.1.10" autocomplete="off">
     <div class="modal-actions">
-      <button class="btn-cancel" onclick="closeTargetModal()">[ cancel ]</button>
-      <button class="btn-accept" onclick="acceptTarget()">[ accept ]</button>
+      <button class="btn-cancel" onclick="closeTargetModal()">cancel</button>
+      <button class="btn-accept" onclick="acceptTarget()">accept</button>
     </div>
   </div>
 </div>

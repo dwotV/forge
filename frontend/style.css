@@ -184,6 +184,45 @@
     .app-btn.running:hover .pulse { display: none; }
     .app-btn.running:hover .kill-btn { display: block; }
 
+    /* ── Droplist "tools" ───────────────────────── */
+    .dropdown-btn {
+      justify-content: flex-start;
+    }
+    .dropdown-btn.open {
+      background: var(--bg3);
+      border-color: var(--text-dim);
+      color: var(--text-hi);
+    }
+    .dropdown-btn .app-name { flex: 1; }
+    .dropdown-btn .dropdown-arrow-wrap {
+      color: var(--text-dim);
+      font-size: 12px;
+      flex-shrink: 0;
+    }
+    .dropdown-btn:hover .dropdown-arrow-wrap,
+    .dropdown-btn.open .dropdown-arrow-wrap {
+      color: var(--text-hi);
+    }
+    .dropdown-btn .dropdown-arrow {
+      display: inline-block;
+      transition: transform .2s;
+    }
+    .dropdown-btn.open .dropdown-arrow {
+      transform: rotate(180deg);
+    }
+    .dropdown-list {
+      display: flex;
+      flex-direction: column;
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height .25s ease;
+      margin-top: 0;
+    }
+    .dropdown-list.open {
+      max-height: 600px;
+      margin-top: 6px;
+    }
+
     /* ── Main — terminal + visor GUI ──────────── */
     #main {
       grid-area: main;
@@ -210,24 +249,89 @@
       display: block;
     }
 
-    /* Cabecera de la terminal */
+    /* Cabecera de la terminal — barra de pestañas */
     #term-header {
       background: var(--bg2);
       border-bottom: 1px solid var(--border);
-      padding: 0 14px;
+      padding: 0 8px;
       height: 34px;
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 6px;
       flex-shrink: 0;
     }
-    #term-header .tab {
-      font-size: 11px;
-      color: var(--green);
-      border-bottom: 2px solid var(--green);
-      padding: 0 2px 4px;
-      letter-spacing: 0.04em;
+    #tabs-bar {
+      display: flex;
+      align-items: stretch;
+      gap: 2px;
+      overflow-x: auto;
+      scrollbar-width: none;
+      height: 100%;
     }
+    #tabs-bar::-webkit-scrollbar { display: none; }
+
+    .tab-item {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      padding: 0 8px 0 10px;
+      height: 100%;
+      cursor: pointer;
+      font-size: 11px;
+      color: var(--text-dim);
+      border-bottom: 2px solid transparent;
+      white-space: nowrap;
+      transition: color .15s, background .15s;
+      flex-shrink: 0;
+    }
+    .tab-item:hover {
+      color: var(--text-hi);
+      background: var(--bg3);
+    }
+    .tab-item.active {
+      color: var(--green);
+      border-bottom-color: var(--green);
+    }
+    .tab-item .tab-name {
+      letter-spacing: 0.02em;
+    }
+    .tab-item .tab-close {
+      background: none;
+      border: none;
+      color: var(--text-dim);
+      font-size: 13px;
+      line-height: 1;
+      cursor: pointer;
+      padding: 1px 2px;
+      font-family: var(--mono);
+      border-radius: 3px;
+      transition: color .15s, background .15s;
+    }
+    .tab-item .tab-close:hover {
+      color: var(--red);
+      background: rgba(255,71,87,0.12);
+    }
+
+    #btn-new-tab {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      font-family: var(--mono);
+      font-size: 13px;
+      width: 22px;
+      height: 22px;
+      line-height: 1;
+      border-radius: 4px;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: color .15s, border-color .15s, background .15s;
+    }
+    #btn-new-tab:hover {
+      color: var(--green);
+      border-color: var(--green-dim);
+      background: var(--green-bg);
+    }
+
     #term-header .ws-status {
       font-size: 10px;
       color: var(--text-dim);
@@ -247,16 +351,23 @@
     }
     #btn-reconnect:hover { color: var(--text-hi); border-color: var(--text-dim); }
 
-    /* Contenedor xterm */
-    #terminal {
+    /* Contenedor de paneles de terminal — uno por pestaña, solo el activo visible */
+    #terminal-panes {
       flex: 1;
+      position: relative;
       overflow: hidden;
-      padding: 8px;
       background: var(--bg);
+    }
+    .terminal-pane {
+      position: absolute;
+      inset: 0;
+      padding: 8px;
+      display: none;
       scrollbar-color: #555555 transparent;
     }
-    #terminal .xterm { height: 100%; }
-    #terminal .xterm-viewport { background: var(--bg) !important; }
+    .terminal-pane.active { display: block; }
+    .terminal-pane .xterm { height: 100%; }
+    .terminal-pane .xterm-viewport { background: var(--bg) !important; }
 
     /* ── Notificación toast ────────────────────── */
     #toast {

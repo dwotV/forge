@@ -4,24 +4,59 @@ const BACKEND = window.location.hostname === 'localhost'
   : `http://${window.location.hostname}:3000`;
 const WS_URL  = BACKEND.replace('http', 'ws') + '/terminal';
 
-// ── Catálogo: qué apps van en qué sección ─────────────
-const APP_SECTIONS = {
-  'apps-web':  ['firefox', 'burpsuite', 'zaproxy'],
-  'apps-net':  ['wireshark', 'zenmap', 'ettercap'],
-  'apps-pass': ['hydra', 'johnny'],
-  'apps-other':['autopsy', 'fern', 'ghidra', 'terminal', 'files'],
-};
+// ── Catálogo: qué apps van en cada zona de la sidebar ──
+const QUICK_APPS = ['firefox', 'files'];
+const TOOL_APPS   = ['burpsuite', 'zaproxy', 'wireshark', 'zenmap', 'ettercap', 'hydra', 'johnny', 'autopsy', 'fern', 'ghidra', 'terminal'];
 
 // ── Estado ─────────────────────────────────────────────
-let term, fitAddon, ws, statusInterval, guiOpen = false;
+let guiOpen = false;
 let appStatus = {};  // { wireshark: true, burpsuite: false, ... }
 let currentTarget = null; // { host, ip }
 
+// ── Pestañas de terminal ───────────────────────────────
+let tabs = [];          // [{ id, term, fitAddon, ws, container, ro, label, wsConnected, wsStatusText }]
+let activeTabId = null;
+let tabCounter = 0;
+
 // ─────────────────────────────────────────────────────
-//  xterm.js — iniciar terminal
+//  xterm.js — gestor de pestañas
+//
+//  Cada pestaña tiene su propia instancia de Terminal,
+//  su propio WebSocket y su propio contenedor DOM. Solo
+//  el panel de la pestaña activa se muestra; el resto
+//  sigue corriendo en segundo plano.
 // ─────────────────────────────────────────────────────
-function initTerminal() {
-  term = new Terminal({
+
+function initTerminals() {
+  createTab();
+}
+
+function getActiveTab() {
+  return tabs.find(t => t.id === activeTabId);
+}
+
+// Mantiene los nombres "shell N" consecutivos según la posición actual
+// de cada pestaña, sin importar el id interno con el que se creó.
+function renumberTabs() {
+  tabs.forEach((t, i) => { t.label = `shell ${i + 1}`; });
+}
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+function createTab() {
+  tabCounter++;
+  const id = `tab-${tabCounter}`;
+
+  const container = document.createElement('div');
+  container.className = 'terminal-pane';
+  container.id = id;
+  document.getElementById('terminal-panes').appendChild(container);
+
+  const term = new Terminal({
     theme: {
       background:  '#0d0f14',
       foreground:  '#c8cdd8',
@@ -46,70 +81,147 @@ function initTerminal() {
     allowProposedApi: true,
   });
 
-  fitAddon = new FitAddon.FitAddon();
+  const fitAddon = new FitAddon.FitAddon();
   term.loadAddon(fitAddon);
   term.loadAddon(new WebLinksAddon.WebLinksAddon());
-  term.open(document.getElementById('terminal'));
-  fitAddon.fit();
+  term.open(container);
 
-  // Reajustar cuando cambie el tamaño de ventana
+  const tabObj = {
+    id, term, fitAddon, container,
+    ws: null,
+    label: `shell ${tabCounter}`,
+    wsConnected: false,
+    wsStatusText: 'desconectado',
+  };
+  tabs.push(tabObj);
+
+  term.onData(data => {
+    if (tabObj.ws && tabObj.ws.readyState === WebSocket.OPEN) tabObj.ws.send(data);
+  });
+
   const ro = new ResizeObserver(() => {
-    fitAddon.fit();
-    if (ws && ws.readyState === WebSocket.OPEN) {
-      ws.send(JSON.stringify({ type: 'resize', cols: term.cols, rows: term.rows }));
+    if (tabObj.id === activeTabId) {
+      fitAddon.fit();
+      sendResize(tabObj);
     }
   });
-  ro.observe(document.getElementById('terminal'));
+  ro.observe(container);
+  tabObj.ro = ro;
 
-  // Registrar onData UNA SOLA VEZ aquí.
-  // connectTerminal() puede llamarse múltiples veces (reconexión), por eso
-  // NO debe registrar onData — de lo contrario los listeners se acumulan
-  // y cada tecla se envía N veces al backend (bug de caracteres duplicados).
-  term.onData(data => {
-    if (ws && ws.readyState === WebSocket.OPEN) ws.send(data);
+  renumberTabs();
+  renderTabsBar();
+  switchTab(id);
+  connectTab(tabObj);
+
+  return tabObj;
+}
+
+function switchTab(id) {
+  activeTabId = id;
+  tabs.forEach(t => t.container.classList.toggle('active', t.id === id));
+  renderTabsBar();
+
+  const t = getActiveTab();
+  if (t) {
+    setTimeout(() => {
+      t.fitAddon.fit();
+      sendResize(t);
+      t.term.focus();
+    }, 0);
+  }
+  updateWsLabelForActive();
+}
+
+function closeTab(id, e) {
+  if (e) e.stopPropagation();
+  if (tabs.length <= 1) return; // siempre debe quedar al menos una pestaña
+
+  const idx = tabs.findIndex(t => t.id === id);
+  if (idx === -1) return;
+
+  const t = tabs[idx];
+  if (t.ws) { t.ws.onclose = null; t.ws.close(); }
+  t.ro && t.ro.disconnect();
+  t.term.dispose();
+  t.container.remove();
+  tabs.splice(idx, 1);
+  renumberTabs();
+
+  if (activeTabId === id) {
+    const next = tabs[Math.max(0, idx - 1)];
+    switchTab(next.id);
+  } else {
+    renderTabsBar();
+  }
+}
+
+function renderTabsBar() {
+  const bar = document.getElementById('tabs-bar');
+  bar.innerHTML = '';
+  tabs.forEach(t => {
+    const el = document.createElement('div');
+    el.className = 'tab-item' + (t.id === activeTabId ? ' active' : '');
+    el.onclick = () => switchTab(t.id);
+    el.innerHTML = `
+      <span class="tab-name">${escapeHtml(t.label)}</span>
+      ${tabs.length > 1 ? `<button class="tab-close" title="Close tab" onclick="closeTab('${t.id}', event)">×</button>` : ''}
+    `;
+    bar.appendChild(el);
   });
-
-  connectTerminal();
 }
 
 // ─────────────────────────────────────────────────────
-//  WebSocket — conectar con bash en Kali
+//  WebSocket — conectar con bash en Kali (por pestaña)
 // ─────────────────────────────────────────────────────
-function connectTerminal() {
-  if (ws) { ws.onclose = null; ws.close(); }
-  setWsStatus('connecting...', false);
+function connectTab(t) {
+  if (t.ws) { t.ws.onclose = null; t.ws.close(); }
+  setTabWsStatus(t, 'connecting...', false);
 
-  ws = new WebSocket(WS_URL);
-  //ws.binaryType = 'arraybuffer';
+  t.ws = new WebSocket(WS_URL);
 
-  ws.onopen = () => {
-    setWsStatus('connected', true);
-    term.clear();
-    // Mandar tamaño inicial
-    ws.send(JSON.stringify({ type: 'resize', cols: term.cols, rows: term.rows }));
+  t.ws.onopen = () => {
+    setTabWsStatus(t, 'connected', true);
+    t.term.clear();
+    sendResize(t);
   };
 
-  ws.onmessage = e => {
-    /*const data = e.data instanceof ArrayBuffer
-      ? new Uint8Array(e.data)
-      : e.data;*/
-    term.write(e.data);
+  t.ws.onmessage = e => {
+    t.term.write(e.data);
   };
 
-  ws.onclose = () => {
-    setWsStatus('offline', false);
-    term.write('\r\n\x1b[31m[connection closed — press "reconnect"]\x1b[0m\r\n');
+  t.ws.onclose = () => {
+    setTabWsStatus(t, 'offline', false);
+    t.term.write('\r\n\x1b[31m[connection closed — press "reconnect"]\x1b[0m\r\n');
   };
 
-  ws.onerror = () => {
-    setWsStatus('error', false);
+  t.ws.onerror = () => {
+    setTabWsStatus(t, 'error', false);
   };
 }
 
-function setWsStatus(text, connected) {
+function reconnectActiveTab() {
+  const t = getActiveTab();
+  if (t) connectTab(t);
+}
+
+function sendResize(t) {
+  if (t.ws && t.ws.readyState === WebSocket.OPEN) {
+    t.ws.send(JSON.stringify({ type: 'resize', cols: t.term.cols, rows: t.term.rows }));
+  }
+}
+
+function setTabWsStatus(t, text, connected) {
+  t.wsStatusText = text;
+  t.wsConnected  = connected;
+  if (t.id === activeTabId) updateWsLabelForActive();
+}
+
+function updateWsLabelForActive() {
+  const t  = getActiveTab();
   const el = document.getElementById('ws-label');
-  el.textContent = text;
-  el.className = 'ws-status' + (connected ? ' conn' : '');
+  if (!t || !el) return;
+  el.textContent = t.wsStatusText;
+  el.className = 'ws-status' + (t.wsConnected ? ' conn' : '');
 }
 
 // ─────────────────────────────────────────────────────
@@ -221,30 +333,49 @@ async function renderAppButtons() {
     const byId = {};
     apps.forEach(a => { byId[a.id] = a; });
 
-    // Rellenar cada sección
-    for (const [containerId, ids] of Object.entries(APP_SECTIONS)) {
-      const container = document.getElementById(containerId);
-      if (!container) continue;
-      ids.forEach(id => {
-        const app = byId[id];
-        if (!app) return;
-        const btn = document.createElement('button');
-        btn.className   = 'app-btn';
-        btn.dataset.app = id;
-        btn.onclick     = () => launchApp(id);
-        btn.innerHTML   = `
-          <span class="app-icon">${app.icon}</span>
-          <span class="app-name">${app.label}</span>
-          <span class="pulse"></span>
-          <button class="kill-btn" title="Kill" onclick="killApp('${id}', event)">×</button>
-        `;
-        container.appendChild(btn);
+    const buildBtn = (id) => {
+      const app = byId[id];
+      if (!app) return null;
+      const btn = document.createElement('button');
+      btn.className   = 'app-btn';
+      btn.dataset.app = id;
+      btn.onclick     = () => launchApp(id);
+      btn.innerHTML   = `
+        <span class="app-icon">${app.icon}</span>
+        <span class="app-name">${app.label}</span>
+        <span class="pulse"></span>
+        <button class="kill-btn" title="Kill" onclick="killApp('${id}', event)">×</button>
+      `;
+      return btn;
+    };
+
+    const quickContainer = document.getElementById('apps-quick');
+    if (quickContainer) {
+      QUICK_APPS.forEach(id => {
+        const btn = buildBtn(id);
+        if (btn) quickContainer.appendChild(btn);
+      });
+    }
+
+    const toolsContainer = document.getElementById('apps-tools');
+    if (toolsContainer) {
+      TOOL_APPS.forEach(id => {
+        const btn = buildBtn(id);
+        if (btn) toolsContainer.appendChild(btn);
       });
     }
   } catch {
     // Backend aún no disponible, reintentar en 2s
     setTimeout(renderAppButtons, 2000);
   }
+}
+
+// ─────────────────────────────────────────────────────
+//  Droplist de tools
+// ─────────────────────────────────────────────────────
+function toggleToolsDropdown() {
+  document.getElementById('apps-tools').classList.toggle('open');
+  document.getElementById('tools-dropdown-btn').classList.toggle('open');
 }
 
 // ─────────────────────────────────────────────────────
@@ -319,18 +450,12 @@ function renderTargetButton() {
     <button class="target-clear" onclick="clearTarget(event)" title="Clear target">×</button>
   `;
 }
- 
-function escapeHtml(str) {
-  const div = document.createElement('div');
-  div.textContent = str;
-  return div.innerHTML;
-}
 
 // ─────────────────────────────────────────────────────
 //  Arranque
 // ─────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
-  initTerminal();
+  initTerminals();
   renderAppButtons();
   healthCheck();
   refreshStatus();
