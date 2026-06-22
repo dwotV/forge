@@ -520,7 +520,7 @@ function renderTargetButton() {
   btn.title = '';
   btn.innerHTML = `
     <span class="target-host">${escapeHtml(currentTarget.host)}</span>
-    <span class="target-sep">·</span>
+    <span class="target-sep">//</span>
     <span class="target-ip" onclick="copyTargetIp(event)" title="Click to copy">
       <span class="ip-value">${escapeHtml(currentTarget.ip)}</span>
       <span class="ip-copy-label">copy ip</span>
