@@ -5,7 +5,7 @@
 
 set -e
 
-echo "[*] Iniciando contenedor Kali — Panel de Hacking"
+echo "[*] Initializing container Kali-Forge"
 
 # ── Config de Xfce: copiar plantilla al home ──
 #    Incluye el wallpaper preconfigurado.
@@ -16,6 +16,19 @@ if [[ ! -f "${XFCE_DIR}/xfce4-desktop.xml" ]]; then
   echo "[*] Aplicando configuración de escritorio..."
   mkdir -p "$XFCE_DIR"
   cp /etc/forge/xfce4/xfconf/xfce-perchannel-xml/xfce4-desktop.xml "$XFCE_DIR/"
+fi
+
+# ── Autoconfigure Forge shell scripts ─────────
+if ! grep -q "forge-welcome.sh" /home/${KALI_USER}/.zshrc 2>/dev/null; then
+  echo '[[ -o interactive ]] && /usr/share/forge/forge-welcome.sh' >> /home/${KALI_USER}/.zshrc
+fi
+
+if ! grep -q "forge-prompt.zsh" /home/${KALI_USER}/.zshrc 2>/dev/null; then
+  echo 'source /usr/share/forge/forge-prompt.zsh' >> /home/${KALI_USER}/.zshrc
+fi
+
+if ! grep -q "forge-help.zsh" /home/${KALI_USER}/.zshrc 2>/dev/null; then
+  echo 'source /usr/share/forge/forge-help.zsh' >> /home/${KALI_USER}/.zshrc
 fi
 
 # ── Iniciar D-Bus (necesario para Xfce) ──────

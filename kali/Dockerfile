@@ -181,6 +181,12 @@ RUN cat > /etc/forge/xfce4/xfconf/xfce-perchannel-xml/xfce4-desktop.xml << 'XFCO
   </property>
 </channel>
 XFCONF
+
+# ZSH config
+COPY assets/forge-welcome.sh      /usr/share/forge/forge-welcome.sh
+COPY assets/forge-prompt.zsh      /usr/share/forge/forge-prompt.zsh
+COPY assets/forge-help.zsh        /usr/share/forge/forge-help.zsh
+RUN chmod +x /usr/share/forge/forge-welcome.sh
  
 # ── Crear usuario no-root: hacker ─────────────
 #    (Wireshark y otros piden no correr como root)
