@@ -18,6 +18,13 @@ if [[ ! -f "${XFCE_DIR}/xfce4-desktop.xml" ]]; then
   cp /etc/forge/xfce4/xfconf/xfce-perchannel-xml/xfce4-desktop.xml "$XFCE_DIR/"
 fi
 
+# Tema oscuro — se sobreescribe siempre para garantizar que se aplica
+# incluso si el volumen ya existía de un arranque anterior.
+mkdir -p "$XFCE_DIR"
+cp /etc/forge/xfce4/xfconf/xfce-perchannel-xml/xsettings.xml "$XFCE_DIR/"
+cp /etc/forge/xfce4/xfconf/xfce-perchannel-xml/xfwm4.xml     "$XFCE_DIR/"
+chown -R ${KALI_USER}:${KALI_USER} /home/${KALI_USER}/.config
+
 # ── Autoconfigure Forge shell scripts ─────────
 if ! grep -q "forge-welcome.sh" /home/${KALI_USER}/.zshrc 2>/dev/null; then
   echo '[[ -o interactive ]] && /usr/share/forge/forge-welcome.sh' >> /home/${KALI_USER}/.zshrc

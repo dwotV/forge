@@ -33,7 +33,9 @@ RUN apt-get install -y --no-install-recommends \
     xfce4-screenshooter \
     dbus-x11 \
     x11-utils \
-    x11-xserver-utils
+    x11-xserver-utils \
+    arc-theme \
+    papirus-icon-theme
 
 # ── Servidor VNC: TigerVNC ────────────────────
 RUN apt-get install -y --no-install-recommends \
@@ -192,6 +194,27 @@ RUN cat > /etc/forge/xfce4/xfconf/xfce-perchannel-xml/xfce4-desktop.xml << 'XFCO
         </property>
       </property>
     </property>
+  </property>
+</channel>
+XFCONF
+
+# ── Config Xfce: tema oscuro GTK (Arc-Dark) ──
+RUN cat > /etc/forge/xfce4/xfconf/xfce-perchannel-xml/xsettings.xml << 'XFCONF'
+<?xml version="1.0" encoding="UTF-8"?>
+<channel name="xsettings" version="1.0">
+  <property name="Net" type="empty">
+    <property name="ThemeName"     type="string" value="Arc-Dark"/>
+    <property name="IconThemeName" type="string" value="Papirus-Dark"/>
+  </property>
+</channel>
+XFCONF
+ 
+# ── Config Xfce: tema de ventanas (xfwm4) ────
+RUN cat > /etc/forge/xfce4/xfconf/xfce-perchannel-xml/xfwm4.xml << 'XFCONF'
+<?xml version="1.0" encoding="UTF-8"?>
+<channel name="xfwm4" version="1.0">
+  <property name="general" type="empty">
+    <property name="theme" type="string" value="Arc-Dark"/>
   </property>
 </channel>
 XFCONF
