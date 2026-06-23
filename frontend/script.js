@@ -53,6 +53,9 @@ function escapeHtml(str) {
 }
 
 function createTab() {
+  if (tabs.length >= 10) {
+    return null;
+  }
   tabCounter++;
   const id = `tab-${tabCounter}`;
 
@@ -197,6 +200,12 @@ function renderTabsBar() {
       if (input) { input.focus(); input.select(); }
     }, 0);
   }
+
+  // Ocultar el botón de nueva pestaña si se alcanza el límite de 10
+  const btnNewTab = document.getElementById('btn-new-tab');
+  if (btnNewTab) {
+    btnNewTab.style.display = tabs.length >= 10 ? 'none' : 'block';
+  }
 }
 
 // ─────────────────────────────────────────────────────
@@ -260,7 +269,17 @@ function connectTab(t) {
   t.ws.onopen = () => {
     setTabWsStatus(t, 'connected', true);
     t.term.clear();
+    if (t.id === activeTabId) {
+      t.fitAddon.fit();
+    }
     sendResize(t);
+    // Enviar de nuevo tras un breve retraso para asegurar que el canal SSH ya reservó la PTY remota
+    setTimeout(() => {
+      if (t.id === activeTabId) {
+        t.fitAddon.fit();
+      }
+      sendResize(t);
+    }, 200);
   };
 
   t.ws.onmessage = e => {
