@@ -8,9 +8,9 @@ node_modules/
 npm-debug.log*
 
 # ── Binaries ─────────────────────────────────────────────────
-forge-mcp/build/
-forge-mcp/dist/
-forge-mcp/*.tgz
+mcp/build/
+mcp/dist/
+mcp/*.tgz
 
 # ── Docker ───────────────────────────────────────────────────
 *.log

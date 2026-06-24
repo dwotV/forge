@@ -4,6 +4,7 @@
 #  Servicios:
 #    kali     → contenedor Kali Linux con GUI
 #    backend  → Node.js: terminal WS + API REST
+#    kali-api → API REST: ejecución segura de herramientas
 #    frontend → nginx sirviendo index.html
 # ─────────────────────────────────────────────
 
@@ -59,6 +60,26 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
     ports:
       - "3000:3000"
+    networks:
+      - panel-net
+    depends_on:
+      kali:
+        condition: service_healthy
+    restart: unless-stopped
+
+  kali-api:
+    build:
+      context: ./kali-api
+    container_name: forge-kali-api
+    environment:
+      - KALI_CONTAINER=forge-kali
+      - PORT=4000
+      - KALI_USER=${KALI_USER}
+    volumes:
+      # Montar el socket de Docker para poder hacer docker exec en Kali
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - "4000:4000"
     networks:
       - panel-net
     depends_on:
