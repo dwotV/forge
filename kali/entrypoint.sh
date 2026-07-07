@@ -26,6 +26,8 @@ cp /etc/forge/xfce4/xfconf/xfce-perchannel-xml/xfwm4.xml     "$XFCE_DIR/"
 chown -R ${KALI_USER}:${KALI_USER} /home/${KALI_USER}/.config
 
 # ── Autoconfigure Forge shell scripts ─────────
+cat /usr/share/forge/forge-zshrc > /home/${KALI_USER}/.zshrc
+
 if ! grep -q "forge-welcome.sh" /home/${KALI_USER}/.zshrc 2>/dev/null; then
   echo '[[ -o interactive ]] && /usr/share/forge/forge-welcome.sh' >> /home/${KALI_USER}/.zshrc
 fi
@@ -99,7 +101,7 @@ echo "[*] Arrancando noVNC en puerto ${NOVNC_PORT}..."
     --web /usr/share/novnc &
 
 echo "[+] Sistema listo:"
-echo "    VNC directo → localhost:${VNC_PORT}"
+echo "    Direct VNC → localhost:${VNC_PORT}"
 echo "    Web (noVNC) → http://localhost:${NOVNC_PORT}/vnc.html"
 echo ""
 echo "[*] Usa los botones del panel web para lanzar apps."
