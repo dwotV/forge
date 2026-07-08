@@ -8,14 +8,14 @@ export NOCOLOR='\033[0m'
 ### Echo functions
 
 function colorecho () {
-    echo -e "${BLUE}[EXEGOL] $*${NOCOLOR}"
+    echo -e "${BLUE}$*${NOCOLOR}"
 }
 
 function criticalecho () {
-    echo -e "${RED}[EXEGOL ERROR] $*${NOCOLOR}" 2>&1
+    echo -e "${RED}$*${NOCOLOR}" 2>&1
     exit 1
 }
 
 function criticalecho-noexit () {
-    echo -e "${RED}[EXEGOL ERROR] $*${NOCOLOR}" 2>&1
+    echo -e "${RED}$*${NOCOLOR}" 2>&1
 }

@@ -7,6 +7,7 @@ sudo apt-get install -y --no-install-recommends \
     nmap \
     zenmap \
     wireshark \
+    tshark \
     ettercap-graphical \
     netcat-openbsd \
     tcpdump \
