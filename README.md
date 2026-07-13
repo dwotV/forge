@@ -5,7 +5,7 @@
     </picture>
   </a>
 </p>
-<p align="center">A new hacking enviroment structure.</p>
+<p align="center">An environment **forged** for hacking.</p>
 
 <p align="center">
   <img src="assets-readme/forge-screenshot.png" alt="Forge interface">
@@ -17,7 +17,7 @@
 
 ```bash
 git clone https://github.com/dwotV/forge.git
-cp .env.example .env
 cd forge
-docker compose up -d --build
+pipx install ./cli
+forge install
 ```
