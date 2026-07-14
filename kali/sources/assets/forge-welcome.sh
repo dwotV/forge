@@ -30,7 +30,7 @@ echo -e "${DIM}  ─────────────────────
 echo ""
 
 # ── Quick system info ("status line" style) ──
-USER_N="${USER:-hacker}"
+USER_N="$(whoami)"
 HOST_N="$(hostname 2>/dev/null || echo kali)"
 IP_ADDR="$(hostname -I 2>/dev/null | awk '{print $1}')"
 DATE_N="$(date '+%Y-%m-%d %H:%M')"
