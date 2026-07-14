@@ -3,7 +3,7 @@ forge.cli
 ─────────
 Entry point for the `forge` command. Designed to be managed like
 a virtual machine (power on / power off / console / network / shared
-folders), just like VMware, but underneath it orchestrates Docker
+folders), just like a Virtual Machine, but underneath it orchestrates Docker
 containers (docker compose + docker-py), replicating Exegol's approach.
 
 All of Forge's state (.forge/) lives INSIDE the project repo,
@@ -29,9 +29,9 @@ from .ui import banner, confirm, console, log, panel, rule, step_progress, wait_
 USERNAME_RE = re.compile(r"^[a-z_][a-z0-9_-]{0,31}$")
 
 NETWORK_HELP = {
-    "bridge": "Shared bridge network (default). Kali and web panel can see each other. Equivalent to 'Bridged' in VMware.",
-    "nat":    "Isolated bridge network with dedicated subnet, with internet access. Equivalent to 'NAT' in VMware.",
-    "host":   "Kali uses host network directly (no isolation). Equivalent to 'Direct Bridged' / useful for L2 scans, VPN, etc.",
+    "bridge": "Shared bridge network (default). Kali and web panel can see each other.",
+    "nat":    "Isolated bridge network with dedicated subnet, with internet access.",
+    "host":   "Forge uses host network directly (no isolation). Equivalent to 'Direct Bridged' / useful for L2 scans, VPN, etc.",
     "none":   "No network. Equivalent to 'Host-only' disconnected. Maximum isolation.",
 }
 
@@ -88,7 +88,7 @@ def install(force: bool, no_build: bool) -> None:
 
     # ── Preguntas al usuario ───────────────────────────────────────
     console.print()
-    log("Configure your Forge user (equivalent to VM user):", "ask")
+    log("Configure your Forge user:", "ask")
     kali_user = click.prompt("    User", default="hacker")
     while not USERNAME_RE.match(kali_user):
         log("Invalid user: only lowercase, numbers, '_' and '-', cannot start with a number.", "error")
@@ -222,7 +222,7 @@ def _prepare_and_up(ctx: ForgeContext, mode: str, network_override: str | None) 
 )
 @click.pass_obj
 def start(ctx: ForgeContext, mode: str, network: str | None) -> None:
-    """Starts Forge (equivalent to 'Power On' in VMware)."""
+    """Starts Forge."""
     banner()
     rule(f"Starting Forge — mode: {mode}")
 
@@ -260,8 +260,7 @@ def start(ctx: ForgeContext, mode: str, network: str | None) -> None:
 @cli.command()
 @click.pass_obj
 def stop(ctx: ForgeContext) -> None:
-    """Stops Forge without deleting anything (equivalent to 'suspend/power off' VM,
-    keeping the disk). Container state remains intact."""
+    """Stops Forge without deleting anything. Container state remains intact."""
     if not ctx.runtime_compose_file.is_file():
         cfg = cfgmod.load(ctx)
         compose_gen.generate_runtime_compose(ctx, cfg)
@@ -378,8 +377,7 @@ def logs(ctx: ForgeContext, service: str | None) -> None:
 @click.argument("mode", required=False, type=click.Choice(list(NETWORK_HELP)))
 @click.pass_obj
 def network(ctx: ForgeContext, mode: str | None) -> None:
-    """Queries or changes Forge's network mode (bridge/nat/host/none),
-    just like choosing a VM's network adapter."""
+    """Queries or changes Forge's network mode (bridge/nat/host/none)."""
     cfg = cfgmod.load(ctx)
 
     if mode is None:
@@ -469,7 +467,7 @@ def shared_folder(ctx: ForgeContext, open_it: bool) -> None:
 @click.option("-v", "--volumes", is_flag=True, help="Also deletes volumes (home, tools). IRREVERSIBLE.")
 @click.pass_obj
 def destroy(ctx: ForgeContext, volumes: bool) -> None:
-    """Destroys Forge containers (equivalent to deleting the VM)."""
+    """Destroys Forge containers."""
     log("This action will destroy Forge containers.", "warn")
     if volumes:
         log("VOLUMES (user home, installed tools) will also be deleted. This CANNOT be undone.", "error")
