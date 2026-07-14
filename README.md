@@ -5,7 +5,7 @@
     </picture>
   </a>
 </p>
-<p align="center">An environment **forged** for hacking.</p>
+<p align="center">An environment forged for hacking.</p>
 
 <p align="center">
   <img src="assets-readme/forge-screenshot.png" alt="Forge interface">
