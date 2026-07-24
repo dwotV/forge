@@ -174,3 +174,28 @@ def exec_shell(kali_user: str) -> None:
     console.print(f"[green][+][/green] Attaching shell to [bold]{container}[/bold] as [bold]{kali_user}[/bold]...\n")
     sys.stdout.flush()
     os.execvp(cmd[0], cmd)  # never returns if successful
+
+
+# ── MCP server: isolated venv ────────────────────────────────────
+def install_mcp_venv(project_dir: Path, venv_path: Path) -> None:
+    """Creates an isolated virtual environment for the MCP server
+    and installs its dependencies there, so they never touch the
+    user's global (or pipx) Python environment."""
+    import venv
+
+    mcp_pkg = project_dir / "mcp"
+    if not (mcp_pkg / "pyproject.toml").is_file():
+        log("MCP package not found, skipping venv setup.", "warn")
+        return
+
+    # Create (or recreate) the venv
+    venv.create(str(venv_path), with_pip=True, clear=True)
+
+    pip = venv_path / "bin" / "pip"
+    rc = subprocess.call(
+        [str(pip), "install", "--quiet", str(mcp_pkg)],
+    )
+    if rc != 0:
+        raise SystemExit("Failed to install MCP server dependencies.")
+    log(f"MCP venv ready at {venv_path}", "ok")
+

@@ -131,7 +131,7 @@ def install(force: bool, no_build: bool) -> None:
     )
 
     console.print()
-    with step_progress(5, "Installing Forge") as step:
+    with step_progress(6, "Installing Forge") as step:
         step("Generating .env file")
         cfgmod.write_env_file(ctx, cfg, password)
 
@@ -152,6 +152,9 @@ def install(force: bool, no_build: bool) -> None:
         step("Saving configuration")
         cfg.installed = True
         cfgmod.save(ctx, cfg)
+
+        step("Installing MCP server dependencies")
+        docker_ops.install_mcp_venv(ctx.project_dir, ctx.mcp_venv)
 
     if not no_build:
         console.print()

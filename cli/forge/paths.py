@@ -75,6 +75,10 @@ class ForgeContext:
         return self.forge_home / "shared"
 
     @property
+    def mcp_venv(self) -> Path:
+        return self.forge_home / "mcp-venv"
+
+    @property
     def env_file(self) -> Path:
         return self.project_dir / ".env"
 
