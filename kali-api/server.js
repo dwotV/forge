@@ -121,12 +121,7 @@ function validateTool(tool) {
   if (!tool || typeof tool !== 'string') {
     return { valid: false, error: 'El campo "tool" es requerido y debe ser un string.' };
   }
-  if (!ALLOWED_TOOLS.has(tool)) {
-    return {
-      valid: false,
-      error: `Herramienta no permitida: "${tool}". Usa GET /api/v1/tools para ver las disponibles.`,
-    };
-  }
+  // Permitir cualquier comando o herramienta dentro del contenedor Kali
   return { valid: true };
 }
 
@@ -164,8 +159,14 @@ function clampTimeout(value) {
 async function execInKali(cmdArray, { timeout = DEFAULT_TIMEOUT } = {}) {
   const container = docker.getContainer(KALI_CONTAINER);
 
+  // Si la herramienta solicitada es bash o sh y se pasa un solo argumento con el comando completo
+  let finalCmd = cmdArray;
+  if ((cmdArray[0] === 'bash' || cmdArray[0] === 'sh') && cmdArray.length === 2 && !cmdArray[1].startsWith('-')) {
+    finalCmd = [cmdArray[0], '-c', cmdArray[1]];
+  }
+
   const exec = await container.exec({
-    Cmd:          cmdArray,
+    Cmd:          finalCmd,
     AttachStdout: true,
     AttachStderr: true,
     Tty:          false,
@@ -382,8 +383,13 @@ app.post('/api/v1/exec/background', async (req, res) => {
   try {
     const container = docker.getContainer(KALI_CONTAINER);
 
+    let bgCmd = [tool, ...args];
+    if ((tool === 'bash' || tool === 'sh') && args.length === 1 && !args[0].startsWith('-')) {
+      bgCmd = [tool, '-c', args[0]];
+    }
+
     const exec = await container.exec({
-      Cmd:          [tool, ...args],
+      Cmd:          bgCmd,
       AttachStdout: true,
       AttachStderr: true,
       Tty:          false,

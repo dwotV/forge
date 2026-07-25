@@ -1,20 +1,20 @@
 """
 Forge MCP Server
 
-Herramientas registradas:
+Registered tools:
 
-── Backend (UI / apps gráficas) ────────────
-  forge_status       → estado del entorno
-  forge_launch_app   → abrir app gráfica en el VNC
-  forge_close_app    → cerrar app gráfica
+── Backend (UI / Graphical Apps) ────────────
+  forge_status       → Environment status
+  forge_launch_app   → Open graphical app in VNC
+  forge_close_app    → Close graphical app
 
-── Kali API (ejecución de herramientas) ────
-  forge_list_tools   → catálogo de herramientas permitidas
-  forge_exec         → ejecutar herramienta (síncrono)
-  forge_exec_bg      → ejecutar herramienta en background
-  forge_list_jobs    → listar jobs en background
-  forge_job_status   → consultar estado/output de un job
-  forge_job_kill     → matar un job en ejecución
+── Kali API (Tool / Script execution) ──────
+  forge_list_tools   → Available tool catalog
+  forge_exec         → Execute tool/script (synchronous)
+  forge_exec_bg      → Execute tool/script in background
+  forge_list_jobs    → List background jobs
+  forge_job_status   → Inspect status/output of a job
+  forge_job_kill     → Kill a running background job
 """
 
 from __future__ import annotations
@@ -26,7 +26,7 @@ import httpx
 from mcp.server.fastmcp import FastMCP
 
 # ─────────────────────────────────────────────────────────────
-#  Configuración
+#  Configuration
 # ─────────────────────────────────────────────────────────────
 
 BACKEND_URL = os.environ.get("BACKEND_URL", "http://localhost:3000")
@@ -35,7 +35,7 @@ KALI_API_URL = os.environ.get("KALI_API_URL", "http://localhost:4000")
 mcp = FastMCP("forge-mcp")
 
 # ─────────────────────────────────────────────────────────────
-#  Utilidades
+#  Utilities
 # ─────────────────────────────────────────────────────────────
 
 
@@ -45,7 +45,7 @@ async def safe_fetch(
     method: str = "GET",
     json_body: dict | None = None,
 ) -> tuple[dict, bool]:
-    """Fetch con manejo de errores uniforme."""
+    """Fetch with uniform error handling."""
     async with httpx.AsyncClient(timeout=620) as client:
         response = await client.request(method, url, json=json_body)
         data = response.json()
@@ -61,7 +61,7 @@ def json_text(data: object) -> str:
 
 
 # ═════════════════════════════════════════════════════════════
-#  BACKEND — Herramientas de UI / apps gráficas
+#  BACKEND — UI / Graphical App Tools
 # ═════════════════════════════════════════════════════════════
 
 
@@ -132,7 +132,7 @@ async def forge_close_app(
 
 
 # ═════════════════════════════════════════════════════════════
-#  KALI API — Ejecución de herramientas de pentesting / CTF
+#  KALI API — Pentesting / CTF Tool Execution
 # ═════════════════════════════════════════════════════════════
 
 
@@ -154,11 +154,11 @@ async def forge_exec(
     args: list[str] | None = None,
     timeout: int | None = None,
 ) -> str:
-    """Execute a pentesting/CTF tool inside the Forge Kali environment and wait for the result. Use this for quick commands (port scans, lookups, file analysis, etc.). The tool must be in the allowed whitelist — call forge_list_tools to see available tools. Returns stdout, stderr, exit code, and execution duration.
+    """Execute any pentesting/CTF tool, script, or command inside the Forge Kali environment and wait for the result. Can execute any binary available in the system (e.g. nmap, python3, bash, gobuster, custom scripts). Returns stdout, stderr, exit code, and execution duration.
 
     Args:
-        tool: Tool binary name to execute (e.g. 'nmap', 'gobuster', 'sqlmap', 'hydra', 'binwalk', 'curl')
-        args: Arguments to pass to the tool (e.g. ['-sV', '-p', '80,443', '10.10.10.1'])
+        tool: Tool binary or shell to execute (e.g. 'nmap', 'python3', 'bash', 'gobuster', 'hydra', 'curl')
+        args: Arguments or command string to pass to the tool (e.g. ['-sV', '10.10.10.1'] or ['python3 script.py'] or ['whoami && id'])
         timeout: Maximum execution time in seconds (default: 300, max: 600)
     """
     try:
@@ -198,11 +198,11 @@ async def forge_exec_bg(
     args: list[str] | None = None,
     timeout: int | None = None,
 ) -> str:
-    """Execute a pentesting/CTF tool in the background (for long-running scans). Returns a job ID immediately. Use forge_job_status to check progress and get results. Use forge_job_kill to stop a running job. Ideal for: full port scans, brute-force attacks, large directory fuzzing, etc.
+    """Execute any pentesting/CTF tool, script, or command in the background (for long-running tasks/scans). Returns a job ID immediately. Use forge_job_status to check progress and get results. Use forge_job_kill to stop a running job.
 
     Args:
-        tool: Tool binary name to execute (e.g. 'nmap', 'masscan', 'hydra', 'gobuster')
-        args: Arguments to pass to the tool (e.g. ['-sV', '-p-', '10.10.10.0/24'])
+        tool: Tool binary or shell to execute (e.g. 'nmap', 'python3', 'bash', 'gobuster')
+        args: Arguments or command string to pass (e.g. ['-sV', '-p-', '10.10.10.0/24'])
         timeout: Maximum execution time in seconds (default: 300, max: 600)
     """
     try:
@@ -303,7 +303,7 @@ async def forge_job_kill(
 
 
 # ─────────────────────────────────────────────────────────────
-#  Arrancar servidor MCP (transporte stdio)
+#  Start MCP Server (stdio transport)
 # ─────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
