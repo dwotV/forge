@@ -33,18 +33,12 @@
    cd forge
    ```
 
-2. **Configure environment variables:**
-   ```bash
-   cp .env.example .env
-   # Edit .env to adjust credentials or port settings if needed
-   ```
-
-3. **Install the Forge CLI:**
+2. **Install the Forge CLI:**
    ```bash
    pipx install ./cli
    ```
 
-4. **Deploy the environment:**
+3. **Deploy the environment:**
    ```bash
    forge install
    # Or directly via Docker Compose:
