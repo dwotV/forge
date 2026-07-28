@@ -136,8 +136,6 @@ To connect Forge with an MCP client (such as Claude Desktop or Antigravity), add
   },
 }
 ```
-```
-```
 
 ### Claude Desktop/Code
 ```json
