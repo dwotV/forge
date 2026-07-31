@@ -84,6 +84,9 @@ echo "[*] Arrancando SSH..."
 
 # ── Iniciar servidor VNC como usuario hacker ─
 echo "[*] Arrancando TigerVNC en :1 (puerto 5901)..."
+
+# Ensure the hostname resolves to localhost (fixes vncserver in network_mode: host)
+grep -q "^127\.0\.0\.1.*$(hostname)" /etc/hosts || echo "127.0.0.1 $(hostname)" >> /etc/hosts
 su -c "HOME=/home/${KALI_USER} USER=${KALI_USER} vncserver :1 \
     -geometry ${VNC_RESOLUTION} \
     -depth ${VNC_DEPTH} \

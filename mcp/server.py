@@ -18,10 +18,14 @@ Registered tools:
 """
 
 from __future__ import annotations
-
-import json
+import sys
 import os
 
+# Prevent the local 'mcp' directory from shadowing the installed 'mcp' library
+current_dir = os.path.dirname(os.path.abspath(__file__))
+sys.path = [p for p in sys.path if p != current_dir]
+
+import json
 import httpx
 from mcp.server.fastmcp import FastMCP
 
